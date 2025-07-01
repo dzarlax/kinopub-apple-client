@@ -39,12 +39,22 @@ struct MediaItemView: View {
         VStack(spacing: 16) {
           headerView
           Grid(horizontalSpacing: 12, verticalSpacing: 12) {
-            MediaItemDescriptionCard(mediaItem: itemModel.mediaItem, 
-                                     isSkeleton: !itemModel.itemLoaded,
-                                     onDownload: { itemModel.startDownload(item: $0, file: $1) },
-                                     onWatchedToggle: {},
-                                     onBookmarkHandle: {})
-            MediaItemFieldsCard(mediaItem: itemModel.mediaItem, isSkeleton: !itemModel.itemLoaded)
+            if let mediaItem = itemModel.mediaItem {
+              MediaItemDescriptionCard(mediaItem: mediaItem, 
+                                       isSkeleton: itemModel.isLoading,
+                                       onDownload: { itemModel.startDownload(item: $0, file: $1) },
+                                       onWatchedToggle: {},
+                                       onBookmarkHandle: {})
+              MediaItemFieldsCard(mediaItem: mediaItem, isSkeleton: itemModel.isLoading)
+            } else {
+              // Show skeleton loading view when no data
+              MediaItemDescriptionCard(mediaItem: MediaItem.mock(), 
+                                       isSkeleton: true,
+                                       onDownload: { _, _ in },
+                                       onWatchedToggle: {},
+                                       onBookmarkHandle: {})
+              MediaItemFieldsCard(mediaItem: MediaItem.mock(), isSkeleton: true)
+            }
           }
           .containerShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
           .fixedSize(horizontal: false, vertical: true)
@@ -59,16 +69,16 @@ struct MediaItemView: View {
     .toolbar(.hidden, for: .tabBar)
     #endif
     .task {
-      itemModel.fetchData()
+      await itemModel.fetchData()
     }
     .handleError(state: $errorHandler.state)
   }
   
   var headerView: some View {
     MediaItemHeaderView(size: .standard,
-                        mediaItem: itemModel.mediaItem,
+                        mediaItem: itemModel.mediaItem ?? MediaItem.mock(),
                         linkProvider: itemModel.linkProvider,
-                        isSkeleton: !itemModel.itemLoaded)
+                        isSkeleton: itemModel.isLoading)
   }
 }
 

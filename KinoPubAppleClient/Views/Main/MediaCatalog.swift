@@ -84,7 +84,7 @@ class MediaCatalog: ObservableObject {
   func refresh() {
     items = MediaItem.skeletonMock()
     pagination = nil
-    errorHandler.reset()
+    errorHandler.clearError()
     Task {
       Logger.app.debug("refetch items")
       await fetchItems()

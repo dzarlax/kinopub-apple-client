@@ -12,34 +12,81 @@ public class APIClient {
   private let requestBuilder: RequestBuilder
   private let baseUrl: URL
   private var plugins: [APIClientPlugin]
-
-  public init(baseUrl: String, plugins: [APIClientPlugin] = [], session: URLSessionProtocol = URLSessionImpl(session: .shared)) {
+  private let cacheManager: CacheManaging
+  
+  public init(
+    baseUrl: String, 
+    plugins: [APIClientPlugin] = [], 
+    session: URLSessionProtocol = URLSessionImpl(session: .shared),
+    cacheManager: CacheManaging = MemoryCacheManager()
+  ) {
     self.baseUrl = URL(string: baseUrl)!
     self.plugins = plugins
     self.session = session
     self.requestBuilder = RequestBuilder(baseURL: self.baseUrl)
+    self.cacheManager = cacheManager
   }
 
-  public func performRequest<T: Decodable>(with requestData: Endpoint, decodingType: T.Type) async throws -> T {
+  public func performRequest<T: Codable>(
+    with requestData: Endpoint, 
+    decodingType: T.Type
+  ) async throws -> T {
+    
+    // Check cache first for cacheable requests
+    if let cacheableRequest = requestData as? CacheableRequest {
+      switch cacheableRequest.cachePolicy {
+      case .cacheFirst, .memoryOnly:
+        if let cachedResult = cacheManager.get(for: cacheableRequest.cacheKey, type: T.self) {
+          return cachedResult
+        }
+      case .noCache, .networkFirst:
+        break
+      }
+    }
+    
+    // Build request
     guard let request = requestBuilder.build(with: requestData) else {
       throw APIClientError.invalidUrlParams
     }
 
     let preparedRequest = plugins.reduce(request) { $1.prepare(request) }
+    
     // Notify plugins
     plugins.forEach { $0.willSend(preparedRequest) }
 
+    // Perform network request
     let (data, response) = try await session.data(for: preparedRequest)
 
     // Notify plugins
     plugins.forEach { $0.didReceive(response, data: data) }
 
-    return try decode(T.self, from: data, throwDecodingErrorImmediately: false)
+    // Decode response
+    let result = try decode(T.self, from: data, throwDecodingErrorImmediately: false)
+    
+    // Cache result if applicable
+    if let cacheableRequest = requestData as? CacheableRequest,
+       case .memoryOnly = cacheableRequest.cachePolicy {
+      cacheManager.set(result, for: cacheableRequest.cacheKey, ttl: cacheableRequest.cachePolicy.ttl)
+    }
+    
+    return result
+  }
+  
+  // MARK: - Cache Management
+  public func clearCache() {
+    cacheManager.clear()
+  }
+  
+  public func removeCacheEntry(for key: String) {
+    cacheManager.remove(for: key)
   }
 
-  private func decode<T: Decodable>(_ type: T.Type,
-                                    from data: Data,
-                                    throwDecodingErrorImmediately: Bool) throws -> T where T: Decodable {
+  // MARK: - Private Methods
+  private func decode<T: Codable>(
+    _ type: T.Type,
+    from data: Data,
+    throwDecodingErrorImmediately: Bool
+  ) throws -> T where T: Codable {
     do {
       let result = try JSONDecoder().decode(T.self, from: data)
       return result
@@ -47,6 +94,8 @@ public class APIClient {
       if throwDecodingErrorImmediately {
         throw APIClientError.decodingError(error)
       }
+      
+      // Try to decode as backend error
       let result = try decode(BackendError.self, from: data, throwDecodingErrorImmediately: true)
       throw APIClientError.networkError(result)
     }

@@ -25,9 +25,9 @@ The app is structured using the Swift Package Manager with the following package
 The main app target KinoPubAppleClient contains the following folders:
 
 - App - Application lifecycle code like app delegates.
-- Resources - Resources like GoogleService-Info.plist.
+- Resources - Resources like app icons and localizations.
 - Views - SwiftUI view code organized by feature.
-- Services - Services for things like analytics and networking.
+- Services - Services for things like networking and authentication.
 - States - app states e.g. navigation, auth.
 - Custom - various custom classes.
 - Context - dependencies context e.g. services, managers.
@@ -36,11 +36,9 @@ The main app target KinoPubAppleClient contains the following folders:
 
 The following third party libraries are used:
 
-- [Firebase](https://firebase.google.com) - For authentication, analytics, crash reporting.
 - [PopupView](https://github.com/exyte/PopupView) - For displaying popups and overlays.
 - [KeychainAccess](https://github.com/kishikawakatsumi/KeychainAccess) - For storing data in the keychain.
 - [SkeletonUI](https://github.com/CSolanaM/SkeletonUI) - For rendering loading states.
-
 
 ## Packages
 

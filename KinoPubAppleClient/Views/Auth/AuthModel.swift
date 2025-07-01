@@ -31,7 +31,7 @@ class AuthModel: ObservableObject {
 
   func fetchDeviceCode() {
     Logger.app.debug("Fetch device code...")
-    errorHandler.reset()
+    errorHandler.clearError()
     Task {
       do {
         let response = try await authService.fetchDeviceCode()
@@ -83,6 +83,7 @@ class AuthModel: ObservableObject {
     Logger.app.debug("got error: \(error)")
 
     guard let error = error as? APIClientError else {
+      errorHandler.setError(error)
       return
     }
 

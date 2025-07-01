@@ -452,6 +452,9 @@
         }
       }
     },
+    "Error" : {
+
+    },
     "Filter" : {
       "localizations" : {
         "en" : {
@@ -1061,6 +1064,9 @@
           }
         }
       }
+    },
+    "Retry" : {
+
     },
     "Seasons" : {
       "extractionState" : "manual",

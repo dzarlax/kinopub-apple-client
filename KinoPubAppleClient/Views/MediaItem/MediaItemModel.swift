@@ -11,18 +11,56 @@ import OSLog
 import KinoPubLogging
 import KinoPubKit
 
+// MARK: - Loading State
+enum LoadingState<T> {
+  case idle
+  case loading
+  case loaded(T)
+  case failed(AppError)
+  
+  var isLoading: Bool {
+    if case .loading = self { return true }
+    return false
+  }
+  
+  var value: T? {
+    if case .loaded(let value) = self { return value }
+    return nil
+  }
+  
+  var error: AppError? {
+    if case .failed(let error) = self { return error }
+    return nil
+  }
+}
+
+// MARK: - MediaItemModel
 @MainActor
 class MediaItemModel: ObservableObject {
 
-  private var itemsService: VideoContentService
-  private var downloadManager: DownloadManager<DownloadMeta>
-  private var errorHandler: ErrorHandler
-  public var linkProvider: NavigationLinkProvider
-  public var mediaItemId: Int
+  // MARK: - Dependencies
+  private let itemsService: VideoContentService
+  private let downloadManager: DownloadManager<DownloadMeta>
+  private let errorHandler: ErrorHandler
+  private let mediaItemId: Int
   
-  @Published public var mediaItem: MediaItem = MediaItem.mock()
-  @Published public var itemLoaded: Bool = false
+  // MARK: - Public Properties
+  let linkProvider: NavigationLinkProvider
+  
+  // MARK: - Published Properties
+  @Published private(set) var loadingState: LoadingState<MediaItem> = .idle
+  @Published private(set) var downloadProgress: [String: Float] = [:]
 
+  // MARK: - Computed Properties
+  var mediaItem: MediaItem? {
+    loadingState.value
+  }
+  
+  var isLoading: Bool {
+    loadingState.isLoading
+  }
+
+  // MARK: - Init
   init(mediaItemId: Int,
        itemsService: VideoContentService,
        downloadManager: DownloadManager<DownloadMeta>,
@@ -35,21 +73,72 @@ class MediaItemModel: ObservableObject {
     self.downloadManager = downloadManager
   }
 
-  func fetchData() {
-    Task {
-      do {
-        mediaItem = try await itemsService.fetchDetails(for: "\(mediaItemId)").item
-        let mediaId = mediaItem.id
-        mediaItem.seasons = mediaItem.seasons?.map({ $0.mediaId = mediaId; return $0 })
-        itemLoaded = true
-      } catch {
-        errorHandler.setError(error)
+  // MARK: - Public Methods
+  func fetchData() async {
+    guard loadingState.isLoading == false else { return }
+    
+    loadingState = .loading
+    
+    do {
+      let response = try await itemsService.fetchDetails(for: "\(mediaItemId)")
+      var item = response.item
+      
+      // Process seasons data
+      if let seasons = item.seasons {
+        item.seasons = seasons.map { season in
+          var modifiedSeason = season
+          modifiedSeason.mediaId = item.id
+          return modifiedSeason
+        }
       }
+      
+      loadingState = .loaded(item)
+      Logger.app.info("Successfully loaded media item: \(self.mediaItemId)")
+      
+    } catch {
+      let appError = AppError.networkError(error)
+      loadingState = .failed(appError)
+      errorHandler.setError(appError)
+      Logger.app.error("Failed to load media item \(self.mediaItemId): \(error)")
     }
   }
   
   func startDownload(item: DownloadableMediaItem, file: FileInfo) {
-    _ = downloadManager.startDownload(url: URL(string: file.url.http)!, withMetadata: DownloadMeta.make(from: item))
+    guard let url = URL(string: file.url.http) else {
+      errorHandler.handleDownloadError("Invalid URL")
+      return
+    }
+    
+    let metadata = DownloadMeta.make(from: item)
+    let download = downloadManager.startDownload(url: url, withMetadata: metadata)
+    
+    // Monitor download progress
+    observeDownloadProgress(for: download, fileId: "\(file.id)")
+    
+    Logger.app.info("Started download for item: \(item.id)")
   }
+  
+  func retry() async {
+    await fetchData()
+  }
+  
+  // MARK: - Private Methods
+  private func observeDownloadProgress(for download: Download<DownloadMeta>, fileId: String) {
+    // This would typically use Combine to observe download progress
+    // For now, we'll update progress manually
+    downloadProgress[fileId] = 0.0
+  }
+}
 
+// MARK: - Preview Support
+extension MediaItemModel {
+  static func mock() -> MediaItemModel {
+    MediaItemModel(
+      mediaItemId: 1,
+      itemsService: VideoContentServiceMock(),
+      downloadManager: DownloadManager<DownloadMeta>(fileSaver: FileSaver(), database: DownloadedFilesDatabase<DownloadMeta>(fileSaver: FileSaver())),
+      linkProvider: MainRoutesLinkProvider(),
+      errorHandler: ErrorHandler()
+    )
+  }
 }

@@ -12,13 +12,15 @@ let package = Package(
       targets: ["KinoPubKit"])
   ],
   dependencies: [
-    .package(name: "KinoPubLogging", path: "../KinoPubLogging")
+    .package(name: "KinoPubLogging", path: "../KinoPubLogging"),
+    .package(name: "KinoPubBackend", path: "../KinoPubBackend")
   ],
   targets: [
     .target(
       name: "KinoPubKit",
       dependencies: [
-        .product(name: "KinoPubLogging", package: "KinoPubLogging")
+        .product(name: "KinoPubLogging", package: "KinoPubLogging"),
+        .product(name: "KinoPubBackend", package: "KinoPubBackend")
       ]),
       .testTarget(
         name: "KinoPubKitTests",

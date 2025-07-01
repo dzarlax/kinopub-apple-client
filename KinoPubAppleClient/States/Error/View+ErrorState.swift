@@ -16,18 +16,37 @@ extension View {
   /// Displays a popup with an error message when the error state is true.
   /// - Parameter state: A binding to the error state.
   /// - Returns: A modified view with error handling.
-  func handleError(state: Binding<ErrorHandler.State>) -> some View {
-    self.popup(isPresented: state.showError) {
-      ToastContentView(text: state.error.wrappedValue ?? "")
-        .padding()
-    } customize: {
-      $0
-        .type(.floater())
-        .position(.bottom)
-        .animation(.spring())
-        .closeOnTapOutside(true)
-        .autohideIn(5.0)
-    }
+  func handleError(state: Binding<ErrorState>) -> some View {
+    self.alert(
+      "Error",
+      isPresented: .constant(state.wrappedValue.isError),
+      actions: {
+        Button("OK") {
+          state.wrappedValue = .noError
+        }
+        
+        if let error = state.wrappedValue.error,
+           let recoverySuggestion = error.recoverySuggestion {
+          Button("Retry") {
+            // Можно добавить retry логику здесь
+            state.wrappedValue = .noError
+          }
+        }
+      },
+      message: {
+        VStack(alignment: .leading, spacing: 8) {
+          if let error = state.wrappedValue.error {
+            Text(error.localizedDescription)
+            
+            if let recoverySuggestion = error.recoverySuggestion {
+              Text(recoverySuggestion)
+                .font(.caption)
+                .foregroundColor(.secondary)
+            }
+          }
+        }
+      }
+    )
   }
   
 }
