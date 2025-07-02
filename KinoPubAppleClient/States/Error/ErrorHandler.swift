@@ -89,7 +89,7 @@ class ErrorHandler: ObservableObject {
   }
   
   func setError(_ appError: AppError) {
-    Logger.app.error("App error occurred: \(appError.localizedDescription ?? "Unknown")")
+    Logger.app.error("App error occurred: \(appError.localizedDescription)")
     state = .error(appError)
   }
   

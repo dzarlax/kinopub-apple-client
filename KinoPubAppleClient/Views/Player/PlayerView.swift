@@ -41,8 +41,8 @@ struct PlayerView: View {
 #if os(iOS)
     .navigationBarHidden(true)
     .toolbar(.hidden, for: .tabBar)
-    .onChange(of: playerManager.isPlaying) { isPlaying in
-      hideNavigationBar = isPlaying
+    .onChange(of: playerManager.isPlaying) {
+      hideNavigationBar = playerManager.isPlaying
     }
     .onAppear(perform: {
       UIApplication.shared.isIdleTimerDisabled = true
@@ -57,7 +57,9 @@ struct PlayerView: View {
       UIApplication.shared.isIdleTimerDisabled = false
       AppDelegate.orientationLock = .all
       UIDevice.current.setValue(UIDevice.current.orientation.rawValue, forKey: "orientation")
-      UIViewController.attemptRotationToDeviceOrientation()
+      if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene {
+        windowScene.requestGeometryUpdate(.iOS(interfaceOrientations: .all))
+      }
     })
 #endif
   }

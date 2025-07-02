@@ -191,8 +191,7 @@ struct BackgroundDownloadsSettingsView: View {
       HStack {
         Label("Background Tasks", systemImage: "gear")
         Spacer()
-        if #available(iOS 13.0, *),
-           let backgroundManager = appContext.backgroundTaskManager {
+        if let backgroundManager = appContext.backgroundTaskManager {
           Text(backgroundManager.backgroundTasksRegistered ? "Registered" : "Not Registered")
             .font(.subheadline)
             .foregroundColor(backgroundManager.backgroundTasksRegistered ? .green : .red)
@@ -260,12 +259,10 @@ struct BackgroundDownloadsSettingsView: View {
     isBackgroundDownloadsEnabled = appContext.isBackgroundDownloadsEnabled
     backgroundRefreshStatus = UIApplication.shared.backgroundRefreshStatus
     
-    if #available(iOS 10.0, *) {
-      UNUserNotificationCenter.current().getNotificationSettings { settings in
-        DispatchQueue.main.async {
-          self.notificationPermissionGranted = settings.authorizationStatus == .authorized ||
-                                               settings.authorizationStatus == .provisional
-        }
+    UNUserNotificationCenter.current().getNotificationSettings { settings in
+      DispatchQueue.main.async {
+        self.notificationPermissionGranted = settings.authorizationStatus == .authorized ||
+                                             settings.authorizationStatus == .provisional
       }
     }
   }
@@ -303,8 +300,7 @@ struct BackgroundDownloadsSettingsView: View {
   }
   
   private func requestNotificationPermission() async {
-    if #available(iOS 10.0, *),
-       let notificationManager = appContext.notificationManager {
+    if let notificationManager = appContext.notificationManager {
       let granted = await notificationManager.requestNotificationPermission()
       
       DispatchQueue.main.async {

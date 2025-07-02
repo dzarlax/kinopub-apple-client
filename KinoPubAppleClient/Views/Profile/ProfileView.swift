@@ -85,8 +85,8 @@ struct ProfileView: View {
                 }
             }
             .pickerStyle(MenuPickerStyle())
-            .onChange(of: selectedLanguage) { newLanguage in
-                model.changeLanguage(to: newLanguage)
+            .onChange(of: selectedLanguage) {
+                model.changeLanguage(to: selectedLanguage)
             }
         }
     }

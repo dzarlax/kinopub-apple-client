@@ -172,13 +172,11 @@ extension AppContext {
   
   /// Get background task manager (iOS only)
   #if os(iOS)
-  @available(iOS 13.0, *)
   var backgroundTaskManager: BackgroundTaskManager? {
     return downloadManager.backgroundTaskManager
   }
   
   /// Get notification manager (iOS only)
-  @available(iOS 10.0, *)
   var notificationManager: DownloadNotificationManager? {
     return downloadManager.notificationManager
   }

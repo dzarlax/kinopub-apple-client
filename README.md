@@ -10,8 +10,8 @@ This is the iOS, iPadOS and macOS client for the kino.pub service built with Swi
 
 # Supported Platforms
 
-- iOS 16.0.
-- macOS 13.0.
+- iOS 18.0+
+- macOS 13.0+
 
 ## App Structure
 

@@ -43,10 +43,8 @@ public class DownloadManager<Meta: Codable & Equatable>: NSObject, URLSessionDow
   
   // MARK: - Background Support
   #if os(iOS)
-  @available(iOS 13.0, *)
   public private(set) lazy var backgroundTaskManager = BackgroundTaskManager()
   
-  @available(iOS 10.0, *)
   public private(set) lazy var notificationManager = DownloadNotificationManager()
   #endif
   
@@ -123,9 +121,7 @@ public class DownloadManager<Meta: Codable & Equatable>: NSObject, URLSessionDow
       // Schedule background processing if needed
       #if os(iOS)
       if backgroundDownloadsEnabled {
-        if #available(iOS 13.0, *) {
-          backgroundTaskManager.scheduleBackgroundDownloadProcessing()
-        }
+        backgroundTaskManager.scheduleBackgroundDownloadProcessing()
       }
       #endif
       
@@ -145,9 +141,7 @@ public class DownloadManager<Meta: Codable & Equatable>: NSObject, URLSessionDow
       self.downloadProgress.removeValue(forKey: url)
       
       #if os(iOS)
-      if #available(iOS 10.0, *) {
-        self.notificationManager.clearNotifications(for: url)
-      }
+      self.notificationManager.clearNotifications(for: url)
       #endif
       
       DispatchQueue.main.async {
@@ -194,17 +188,10 @@ public class DownloadManager<Meta: Codable & Equatable>: NSObject, URLSessionDow
   // MARK: - Background Support Methods
   public func enableBackgroundDownloads() async -> Bool {
     #if os(iOS)
-    guard #available(iOS 13.0, *) else {
-      Logger.kit.warning("[DOWNLOAD] Background downloads require iOS 13.0+")
-      return false
-    }
-    
     // Request notification permission
-    if #available(iOS 10.0, *) {
-      let notificationGranted = await notificationManager.requestNotificationPermission()
-      if !notificationGranted {
-        Logger.kit.warning("[DOWNLOAD] Notification permission not granted")
-      }
+    let notificationGranted = await notificationManager.requestNotificationPermission()
+    if !notificationGranted {
+      Logger.kit.warning("[DOWNLOAD] Notification permission not granted")
     }
     
     // Register background tasks
@@ -287,9 +274,7 @@ public class DownloadManager<Meta: Codable & Equatable>: NSObject, URLSessionDow
     Logger.kit.info("[DOWNLOAD] App entered background, background downloads will continue")
     
     if backgroundDownloadsEnabled {
-      if #available(iOS 13.0, *) {
-        backgroundTaskManager.scheduleBackgroundDownloadProcessing()
-      }
+      backgroundTaskManager.scheduleBackgroundDownloadProcessing()
     }
   }
   
@@ -330,7 +315,7 @@ public class DownloadManager<Meta: Codable & Equatable>: NSObject, URLSessionDow
       
       // Send notification
       #if os(iOS)
-      if #available(iOS 10.0, *), backgroundDownloadsEnabled {
+      if backgroundDownloadsEnabled {
         notificationManager.scheduleDownloadCompleteNotification(
           for: fileInfo,
           localURL: destinationURL
@@ -351,7 +336,7 @@ public class DownloadManager<Meta: Codable & Equatable>: NSObject, URLSessionDow
       Logger.kit.error("[DOWNLOAD] Error during moving file: \(error)")
       
       #if os(iOS)
-      if #available(iOS 10.0, *), backgroundDownloadsEnabled {
+      if backgroundDownloadsEnabled {
         notificationManager.scheduleDownloadFailedNotification(
           for: sourceURL,
           fileName: sourceURL.lastPathComponent,
@@ -396,7 +381,7 @@ public class DownloadManager<Meta: Codable & Equatable>: NSObject, URLSessionDow
     
     // Send progress notification
     #if os(iOS)
-    if #available(iOS 10.0, *), backgroundDownloadsEnabled {
+    if backgroundDownloadsEnabled {
       notificationManager.scheduleProgressNotification(
         for: url.lastPathComponent,
         progress: progress,
@@ -413,7 +398,7 @@ public class DownloadManager<Meta: Codable & Equatable>: NSObject, URLSessionDow
       Logger.kit.error("[DOWNLOAD] Download error for \(url): \(error)")
       
       #if os(iOS)
-      if #available(iOS 10.0, *), backgroundDownloadsEnabled {
+      if backgroundDownloadsEnabled {
         notificationManager.scheduleDownloadFailedNotification(
           for: url,
           fileName: url.lastPathComponent,

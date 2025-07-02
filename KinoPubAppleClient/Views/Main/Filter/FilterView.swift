@@ -83,8 +83,8 @@ struct FilterView: View {
 
   func numberPicker(title: String, from: Int, to: Int, currentValue: Binding<Int>) -> some View {
     Picker(title, selection: currentValue) {
-      ForEach(from..<to+1) {
-        Text("\($0)").tag($0)
+      ForEach(Array(from...to), id: \.self) { value in
+        Text("\(value)").tag(value)
       }
     }
   }

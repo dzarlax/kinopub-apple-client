@@ -14,7 +14,6 @@ import BackgroundTasks
 #if os(iOS)
 
 // MARK: - Background Task Manager
-@available(iOS 13.0, *)
 public class BackgroundTaskManager: ObservableObject {
   
   // MARK: - Constants
@@ -54,11 +53,18 @@ public class BackgroundTaskManager: ObservableObject {
   }
   
   public func registerBackgroundTasks() {
-    guard UIApplication.shared.backgroundRefreshStatus == .available else {
-      Logger.kit.warning("[BACKGROUND] Background refresh not available")
-      return
+    Task { @MainActor in
+      guard UIApplication.shared.backgroundRefreshStatus == .available else {
+        Logger.kit.warning("[BACKGROUND] Background refresh not available")
+        return
+      }
+      
+      await performBackgroundTaskRegistration()
     }
-    
+  }
+  
+  @MainActor
+  private func performBackgroundTaskRegistration() async {
     // Register processing task for long-running downloads
     let processingRegistered = BGTaskScheduler.shared.register(
       forTaskWithIdentifier: TaskIdentifiers.downloadProcessing,
@@ -75,9 +81,7 @@ public class BackgroundTaskManager: ObservableObject {
       self.handleBackgroundDownloadSync(task as! BGAppRefreshTask)
     }
     
-    Task { @MainActor in
-      self.backgroundTasksRegistered = processingRegistered && refreshRegistered
-    }
+    self.backgroundTasksRegistered = processingRegistered && refreshRegistered
     
     if backgroundTasksRegistered {
       Logger.kit.info("[BACKGROUND] Background tasks registered successfully")
@@ -114,17 +118,20 @@ public class BackgroundTaskManager: ObservableObject {
   
   // MARK: - Private Methods
   private func checkBackgroundRefreshStatus() {
-    isBackgroundRefreshAvailable = UIApplication.shared.backgroundRefreshStatus == .available
-    
-    switch UIApplication.shared.backgroundRefreshStatus {
-    case .available:
-      Logger.kit.info("[BACKGROUND] Background refresh available")
-    case .denied:
-      Logger.kit.warning("[BACKGROUND] Background refresh denied by user")
-    case .restricted:
-      Logger.kit.warning("[BACKGROUND] Background refresh restricted")
-    @unknown default:
-      Logger.kit.warning("[BACKGROUND] Unknown background refresh status")
+    Task { @MainActor in
+      let status = UIApplication.shared.backgroundRefreshStatus
+      self.isBackgroundRefreshAvailable = status == .available
+      
+      switch status {
+      case .available:
+        Logger.kit.info("[BACKGROUND] Background refresh available")
+      case .denied:
+        Logger.kit.warning("[BACKGROUND] Background refresh denied by user")
+      case .restricted:
+        Logger.kit.warning("[BACKGROUND] Background refresh restricted")
+      @unknown default:
+        Logger.kit.warning("[BACKGROUND] Unknown background refresh status")
+      }
     }
   }
   
@@ -189,17 +196,11 @@ public class BackgroundTaskManager: ObservableObject {
     }
     
     Task {
-      do {
-        // Quick sync of download states
-        await syncDownloadStates()
-        
-        Logger.kit.info("[BACKGROUND] Background sync completed")
-        task.setTaskCompleted(success: true)
-        
-      } catch {
-        Logger.kit.error("[BACKGROUND] Background sync failed: \(error)")
-        task.setTaskCompleted(success: false)
-      }
+      // Quick sync of download states
+      await syncDownloadStates()
+      
+      Logger.kit.info("[BACKGROUND] Background sync completed")
+      task.setTaskCompleted(success: true)
     }
   }
   

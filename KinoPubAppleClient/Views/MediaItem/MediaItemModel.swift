@@ -86,9 +86,8 @@ class MediaItemModel: ObservableObject {
       // Process seasons data
       if let seasons = item.seasons {
         item.seasons = seasons.map { season in
-          var modifiedSeason = season
-          modifiedSeason.mediaId = item.id
-          return modifiedSeason
+          season.mediaId = item.id
+          return season
         }
       }
       

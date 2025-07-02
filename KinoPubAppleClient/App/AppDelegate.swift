@@ -10,6 +10,7 @@ import SwiftUI
 import KinoPubKit
 import KinoPubLogging
 import OSLog
+import UserNotifications
 
 #if os(iOS)
 import BackgroundTasks
@@ -27,9 +28,7 @@ class AppDelegate: NSObject, UIApplicationDelegate {
     UIDevice.current.beginGeneratingDeviceOrientationNotifications()
     
     // Register background tasks
-    if #available(iOS 13.0, *) {
-      registerBackgroundTasks()
-    }
+    registerBackgroundTasks()
     
     Logger.app.info("[APP] Application did finish launching")
     return true
@@ -56,20 +55,21 @@ class AppDelegate: NSObject, UIApplicationDelegate {
     Logger.app.info("[APP] Application entered background")
     
     // Schedule background tasks if needed
-    if #available(iOS 13.0, *) {
-      scheduleBackgroundAppRefresh()
-    }
+    scheduleBackgroundAppRefresh()
   }
   
   func applicationWillEnterForeground(_ application: UIApplication) {
     Logger.app.info("[APP] Application will enter foreground")
     
     // Clear notification badge
-    application.applicationIconBadgeNumber = 0
+    UNUserNotificationCenter.current().setBadgeCount(0) { error in
+      if let error = error {
+        Logger.app.error("[APP] Failed to clear badge count: \(error)")
+      }
+    }
   }
   
   // MARK: - Background Task Registration
-  @available(iOS 13.0, *)
   private func registerBackgroundTasks() {
     // Register download processing task
     BGTaskScheduler.shared.register(
@@ -90,7 +90,6 @@ class AppDelegate: NSObject, UIApplicationDelegate {
     Logger.app.info("[APP] Background tasks registered")
   }
   
-  @available(iOS 13.0, *)
   private func scheduleBackgroundAppRefresh() {
     let request = BGAppRefreshTaskRequest(identifier: "com.kinopub.background.sync")
     request.earliestBeginDate = Date(timeIntervalSinceNow: 15 * 60) // 15 minutes
@@ -103,7 +102,6 @@ class AppDelegate: NSObject, UIApplicationDelegate {
     }
   }
   
-  @available(iOS 13.0, *)
   private func handleBackgroundDownloadProcessing(_ task: BGProcessingTask) {
     Logger.app.info("[APP] Handling background download processing")
     
@@ -138,7 +136,6 @@ class AppDelegate: NSObject, UIApplicationDelegate {
     scheduleBackgroundDownloadProcessing()
   }
   
-  @available(iOS 13.0, *)
   private func handleBackgroundAppRefresh(_ task: BGAppRefreshTask) {
     Logger.app.info("[APP] Handling background app refresh")
     
@@ -159,7 +156,6 @@ class AppDelegate: NSObject, UIApplicationDelegate {
     }
   }
   
-  @available(iOS 13.0, *)
   private func scheduleBackgroundDownloadProcessing() {
     let request = BGProcessingTaskRequest(identifier: "com.kinopub.background.downloads")
     request.requiresNetworkConnectivity = true

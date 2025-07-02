@@ -26,7 +26,7 @@ extension View {
         }
         
         if let error = state.wrappedValue.error,
-           let recoverySuggestion = error.recoverySuggestion {
+           error.recoverySuggestion != nil {
           Button("Retry") {
             // Можно добавить retry логику здесь
             state.wrappedValue = .noError

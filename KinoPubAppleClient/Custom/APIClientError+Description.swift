@@ -8,9 +8,10 @@
 import Foundation
 import KinoPubBackend
 
-extension APIClientError: CustomStringConvertible {
-  public var description: String {
-    switch self {
+// MARK: - API Client Error Helper
+struct APIClientErrorHelper {
+  static func description(for error: APIClientError) -> String {
+    switch error {
     case .urlError:
       return "Wrong URL"
     case .invalidUrlParams:
@@ -25,16 +26,26 @@ extension APIClientError: CustomStringConvertible {
     }
   }
 
-  var isAuthorizationPending: Bool {
-    switch self {
+  static func isAuthorizationPending(_ error: APIClientError) -> Bool {
+    switch error {
     case .networkError(let error):
       if let backendError = error as? BackendError, backendError.errorCode == .authorizationPending {
         return true
       }
-      break
-    default: return false
+      return false
+    default: 
+      return false
     }
-    return false
+  }
+}
+
+// MARK: - Extension for convenience
+extension APIClientError {
+  var localizedDescription: String {
+    APIClientErrorHelper.description(for: self)
   }
 
+  var isAuthorizationPending: Bool {
+    APIClientErrorHelper.isAuthorizationPending(self)
+  }
 }

@@ -27,7 +27,6 @@ private enum ActionIdentifiers {
 }
 
 // MARK: - Download Notification Manager
-@available(iOS 10.0, *)
 public class DownloadNotificationManager: NSObject, ObservableObject {
   
   // MARK: - Properties
@@ -87,8 +86,8 @@ public class DownloadNotificationManager: NSObject, ObservableObject {
       "downloadDate": ISO8601DateFormatter().string(from: fileInfo.downloadDate)
     ]
     
-    // Badge increment
-    content.badge = NSNumber(value: UIApplication.shared.applicationIconBadgeNumber + 1)
+    // Badge increment  
+    content.badge = NSNumber(value: 1)
     
     // Immediate delivery
     let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 0.1, repeats: false)
@@ -191,7 +190,7 @@ public class DownloadNotificationManager: NSObject, ObservableObject {
     notificationCenter.removeAllDeliveredNotifications()
     
     // Reset badge
-    UIApplication.shared.applicationIconBadgeNumber = 0
+    UNUserNotificationCenter.current().setBadgeCount(0) { _ in }
     
     Logger.kit.info("[NOTIFICATIONS] Cleared all download notifications")
   }
@@ -270,7 +269,6 @@ public class DownloadNotificationManager: NSObject, ObservableObject {
 }
 
 // MARK: - UNUserNotificationCenterDelegate
-@available(iOS 10.0, *)
 extension DownloadNotificationManager: UNUserNotificationCenterDelegate {
   
   public func userNotificationCenter(
