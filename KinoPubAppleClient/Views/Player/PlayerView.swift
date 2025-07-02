@@ -41,7 +41,7 @@ struct PlayerView: View {
 #if os(iOS)
     .navigationBarHidden(true)
     .toolbar(.hidden, for: .tabBar)
-    .onChange(of: playerManager.isPlaying) {
+            .onChange(of: playerManager.isPlaying) { _, _ in
       hideNavigationBar = playerManager.isPlaying
     }
     .onAppear(perform: {

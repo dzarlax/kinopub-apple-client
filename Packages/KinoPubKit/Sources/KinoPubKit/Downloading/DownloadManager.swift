@@ -188,13 +188,19 @@ public class DownloadManager<Meta: Codable & Equatable>: NSObject, URLSessionDow
   // MARK: - Background Support Methods
   public func enableBackgroundDownloads() async -> Bool {
     #if os(iOS)
+    // Check if already enabled to prevent duplicate registration
+    if backgroundDownloadsEnabled && backgroundTaskManager.backgroundTasksRegistered {
+      Logger.kit.info("[DOWNLOAD] Background downloads already enabled")
+      return true
+    }
+    
     // Request notification permission
     let notificationGranted = await notificationManager.requestNotificationPermission()
     if !notificationGranted {
       Logger.kit.warning("[DOWNLOAD] Notification permission not granted")
     }
     
-    // Register background tasks
+    // Register background tasks (only if not already registered)
     backgroundTaskManager.registerBackgroundTasks()
     backgroundTaskManager.setDownloadManager(self)
     

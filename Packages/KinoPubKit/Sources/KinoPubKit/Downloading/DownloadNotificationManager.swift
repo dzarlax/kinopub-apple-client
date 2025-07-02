@@ -6,12 +6,12 @@
 //
 
 import Foundation
-import UserNotifications
-import UIKit
 import OSLog
 import KinoPubLogging
 
 #if os(iOS)
+import UserNotifications
+import UIKit
 
 // MARK: - Constants (Outside Generic Class)
 private enum NotificationCategories {

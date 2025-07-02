@@ -45,6 +45,9 @@
         }
       }
     },
+    "Active Downloads" : {
+
+    },
     "AlwaysOnTop" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -91,6 +94,7 @@
       }
     },
     "Apply" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -226,6 +230,15 @@
         }
       }
     },
+    "Background Downloads" : {
+
+    },
+    "Background Refresh" : {
+
+    },
+    "BGContinuedProcessingTask" : {
+
+    },
     "Bookmarks" : {
       "localizations" : {
         "en" : {
@@ -294,6 +307,7 @@
       }
     },
     "Clear" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -429,6 +443,9 @@
           }
         }
       }
+    },
+    "Download videos in the background when the app is not active. BGContinuedProcessingTask provides extended background processing time. Requires Background App Refresh to be enabled." : {
+
     },
     "Downloads" : {
       "localizations" : {
@@ -1158,6 +1175,9 @@
           }
         }
       }
+    },
+    "Task Type" : {
+
     },
     "The app will restart to apply the language change." : {
       "localizations" : {

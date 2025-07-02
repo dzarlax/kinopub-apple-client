@@ -6,20 +6,21 @@
 //
 
 import Foundation
-import UIKit
 import OSLog
 import KinoPubLogging
-import BackgroundTasks
 
 #if os(iOS)
+import UIKit
+import BackgroundTasks
 
 // MARK: - Background Task Manager
 public class BackgroundTaskManager: ObservableObject {
   
   // MARK: - Constants
   private enum TaskIdentifiers {
-    static let downloadProcessing = "com.kinopub.background.downloads"
     static let downloadSync = "com.kinopub.background.sync"
+    // BGContinuedProcessingTask identifier - matches wildcard in Info.plist (iOS 26+)
+    static let continuedProcessing = "com.kinopub.backgroundDownloads.task"
   }
   
   // MARK: - Properties
@@ -27,15 +28,17 @@ public class BackgroundTaskManager: ObservableObject {
   @Published public private(set) var backgroundTasksRegistered: Bool = false
   
   private weak var downloadManager: BackgroundDownloadable?
+  private var registrationAttempted: Bool = false
   
-  // MARK: - Constants
-  public static let downloadTaskIdentifier = "com.kinopub.background-download"
-  public static let refreshTaskIdentifier = "com.kinopub.background-refresh"
-  
-  // MARK: - Future iOS 26 Enhancement
-  // TODO: Add BGContinuedProcessingTask support when iOS 26 is released (October 2025)
-  // This will allow for longer-running background processing tasks
+  // MARK: - BGContinuedProcessingTask Support
+  // BGContinuedProcessingTask will be available in future iOS versions
+  // When available, it will provide extended background processing time for large video downloads
   // Reference: https://developer.apple.com/documentation/backgroundtasks/bgcontinuedprocessingtask
+  // 
+  // To enable when available:
+  // 1. Update checkContinuedProcessingSupport() to check for the actual iOS version
+  // 2. Uncomment the BGContinuedProcessingTask registration code
+  // 3. Update scheduleBackgroundDownloadProcessing() to use the appropriate task type
   
   // MARK: - Initialization
   public init() {
@@ -63,14 +66,36 @@ public class BackgroundTaskManager: ObservableObject {
     }
   }
   
+  public func resetRegistration() {
+    registrationAttempted = false
+    backgroundTasksRegistered = false
+    Logger.kit.info("[BACKGROUND] Registration state reset")
+  }
+  
   @MainActor
   private func performBackgroundTaskRegistration() async {
-    // Register processing task for long-running downloads
-    let processingRegistered = BGTaskScheduler.shared.register(
-      forTaskWithIdentifier: TaskIdentifiers.downloadProcessing,
+    // Prevent multiple registration attempts
+    guard !registrationAttempted else {
+      Logger.kit.info("[BACKGROUND] Background tasks already registered, skipping")
+      return
+    }
+    
+    registrationAttempted = true
+    var registrationResults: [Bool] = []
+    
+    // Register BGContinuedProcessingTask
+    let continuedRegistered = BGTaskScheduler.shared.register(
+      forTaskWithIdentifier: TaskIdentifiers.continuedProcessing,
       using: nil
-    ) { task in
-      self.handleBackgroundDownloadProcessing(task as! BGProcessingTask)
+    ) { [weak self] task in
+      self?.handleContinuedProcessingTask(task)
+    }
+    registrationResults.append(continuedRegistered)
+    
+    if continuedRegistered {
+      Logger.kit.info("[BACKGROUND] BGContinuedProcessingTask registered successfully")
+    } else {
+      Logger.kit.error("[BACKGROUND] BGContinuedProcessingTask registration failed")
     }
     
     // Register app refresh task for quick sync
@@ -80,29 +105,74 @@ public class BackgroundTaskManager: ObservableObject {
     ) { task in
       self.handleBackgroundDownloadSync(task as! BGAppRefreshTask)
     }
+    registrationResults.append(refreshRegistered)
     
-    self.backgroundTasksRegistered = processingRegistered && refreshRegistered
+    if refreshRegistered {
+      Logger.kit.info("[BACKGROUND] Background sync task registered successfully")
+    } else {
+      Logger.kit.warning("[BACKGROUND] Background sync task registration failed")
+    }
+    
+    self.backgroundTasksRegistered = !registrationResults.contains(false)
     
     if backgroundTasksRegistered {
-      Logger.kit.info("[BACKGROUND] Background tasks registered successfully")
+      Logger.kit.info("[BACKGROUND] All background tasks registered successfully")
     } else {
-      Logger.kit.error("[BACKGROUND] Failed to register background tasks")
+      Logger.kit.error("[BACKGROUND] Some background tasks failed to register")
     }
   }
   
   public func scheduleBackgroundDownloadProcessing() {
-    let request = BGProcessingTaskRequest(identifier: TaskIdentifiers.downloadProcessing)
-    request.requiresNetworkConnectivity = true
-    request.requiresExternalPower = false
-    request.earliestBeginDate = Date(timeIntervalSinceNow: 30) // 30 seconds from now
+    Logger.kit.info("[BACKGROUND] Scheduling background download processing...")
+    Logger.kit.info("[BACKGROUND] Will schedule BGContinuedProcessingTask")
+    scheduleContinuedProcessingTask()
+  }
+  
+  private func scheduleContinuedProcessingTask() {
+    let identifier = TaskIdentifiers.continuedProcessing
     
-    do {
-      try BGTaskScheduler.shared.submit(request)
-      Logger.kit.info("[BACKGROUND] Background processing task scheduled")
-    } catch {
-      Logger.kit.error("[BACKGROUND] Failed to schedule background processing: \(error)")
+    Logger.kit.info("[BACKGROUND] Creating BGContinuedProcessingTask with identifier: \(identifier)")
+    
+    if #available(iOS 26.0, *) {
+      let request = BGContinuedProcessingTaskRequest(
+        identifier: identifier,
+        title: "KinoPub Downloads", 
+        subtitle: "Downloading video content in background"
+      )
+      
+      // Configure submission strategy  
+      request.strategy = .queue  // Queue for processing as soon as possible
+      
+      // Log additional details about the request
+      Logger.kit.info("[BACKGROUND] BGContinuedProcessingTask details:")
+      Logger.kit.info("[BACKGROUND] - Identifier: \(request.identifier)")
+      Logger.kit.info("[BACKGROUND] - Title: \(request.title)")
+      Logger.kit.info("[BACKGROUND] - Subtitle: \(request.subtitle)")
+      Logger.kit.info("[BACKGROUND] - Strategy: \(String(describing: request.strategy))")
+      
+              do {
+          try BGTaskScheduler.shared.submit(request)
+          Logger.kit.info("[BACKGROUND] BGContinuedProcessingTask scheduled successfully")
+          Logger.kit.info("[BACKGROUND] Live Activity should be displayed to user")
+          
+          // Check if Live Activities are supported
+          #if os(iOS)
+          Task { @MainActor in
+            Logger.kit.info("[BACKGROUND] iOS 26+ detected, Live Activities should be supported")
+            Logger.kit.info("[BACKGROUND] Check Control Center or Lock Screen for Live Activity")
+          }
+          #endif
+          
+        } catch {
+        Logger.kit.error("[BACKGROUND] Failed to schedule BGContinuedProcessingTask: \(error)")
+        Logger.kit.error("[BACKGROUND] Error details: \(error.localizedDescription)")
+      }
+    } else {
+      Logger.kit.error("[BACKGROUND] BGContinuedProcessingTaskRequest requires iOS 26+")
     }
   }
+  
+
   
   public func scheduleBackgroundSync() {
     let request = BGAppRefreshTaskRequest(identifier: TaskIdentifiers.downloadSync)
@@ -135,6 +205,8 @@ public class BackgroundTaskManager: ObservableObject {
     }
   }
   
+
+  
   private func setupNotifications() {
     NotificationCenter.default.addObserver(
       self,
@@ -151,38 +223,45 @@ public class BackgroundTaskManager: ObservableObject {
   }
   
   // MARK: - Background Task Handlers
-  private func handleBackgroundDownloadProcessing(_ task: BGProcessingTask) {
-    Logger.kit.info("[BACKGROUND] Handling background download processing")
+  
+  // New handler for BGContinuedProcessingTask 
+  // Using conditional compilation for SDK compatibility
+  private func handleContinuedProcessingTask(_ task: BGTask) {
+    Logger.kit.info("[BACKGROUND] Handling BGContinuedProcessingTask")
     
-    // Schedule next processing task
-    scheduleBackgroundDownloadProcessing()
+    // Note: Do not schedule next BGContinuedProcessingTask here
+    // It should be scheduled by the app when needed, from foreground
     
     task.expirationHandler = {
-      Logger.kit.warning("[BACKGROUND] Background processing task expired")
+      Logger.kit.warning("[BACKGROUND] BGContinuedProcessingTask expired")
       task.setTaskCompleted(success: false)
     }
     
-    // Perform background work
-    Task {
+    // Perform extended background work
+    Task { [weak self] in
       do {
-        // Check and resume any paused downloads
-        await resumePendingDownloads()
+        // Extended processing for larger downloads
+        await self?.performExtendedDownloadProcessing()
         
-        // Check available storage
-        try await validateStorageSpace()
+        // Validate storage and optimize downloads
+        if let self = self {
+          try await self.validateStorageSpace()
+        }
         
-        // Notify about completed downloads
-        await sendDownloadNotifications()
+        // Send progress notifications
+        await self?.sendDownloadNotifications()
         
-        Logger.kit.info("[BACKGROUND] Background processing completed successfully")
+        Logger.kit.info("[BACKGROUND] BGContinuedProcessingTask completed successfully")
         task.setTaskCompleted(success: true)
         
       } catch {
-        Logger.kit.error("[BACKGROUND] Background processing failed: \(error)")
+        Logger.kit.error("[BACKGROUND] BGContinuedProcessingTask failed: \(error)")
         task.setTaskCompleted(success: false)
       }
     }
   }
+  
+
   
   private func handleBackgroundDownloadSync(_ task: BGAppRefreshTask) {
     Logger.kit.info("[BACKGROUND] Handling background download sync")
@@ -195,13 +274,34 @@ public class BackgroundTaskManager: ObservableObject {
       task.setTaskCompleted(success: false)
     }
     
-    Task {
+    Task { [weak self] in
       // Quick sync of download states
-      await syncDownloadStates()
+      await self?.syncDownloadStates()
       
       Logger.kit.info("[BACKGROUND] Background sync completed")
       task.setTaskCompleted(success: true)
     }
+  }
+  
+  // MARK: - Processing Methods
+  
+  private func performExtendedDownloadProcessing() async {
+    Logger.kit.debug("[BACKGROUND] Performing extended download processing")
+    
+    guard let downloadManager = downloadManager else { 
+      Logger.kit.warning("[BACKGROUND] Download manager not available")
+      return 
+    }
+    
+    // Resume all downloads with extended time
+    downloadManager.resumeAllDownloads()
+    
+    // Allow more time for larger downloads
+    try? await Task.sleep(nanoseconds: 2_000_000_000) // 2 seconds buffer
+    
+    // Monitor active downloads
+    let activeCount = downloadManager.activeDownloadsCount
+    Logger.kit.info("[BACKGROUND] Managing \(activeCount) active downloads in extended processing")
   }
   
   private func resumePendingDownloads() async {

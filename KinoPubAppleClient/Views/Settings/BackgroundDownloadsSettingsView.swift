@@ -111,7 +111,7 @@ struct BackgroundDownloadsSettingsView: View {
       
       Toggle("", isOn: $isBackgroundDownloadsEnabled)
         .labelsHidden()
-        .onChange(of: isBackgroundDownloadsEnabled) { newValue in
+                  .onChange(of: isBackgroundDownloadsEnabled) { _, newValue in
           Task {
             await toggleBackgroundDownloads(newValue)
           }
@@ -199,6 +199,26 @@ struct BackgroundDownloadsSettingsView: View {
           Text("Not Available")
             .font(.subheadline)
             .foregroundColor(.secondary)
+        }
+      }
+      
+      HStack {
+        Label("Extended Processing", systemImage: "timer")
+        Spacer()
+        VStack(alignment: .trailing, spacing: 2) {
+          if appContext.backgroundTaskManager != nil {
+            Text("BGContinuedProcessingTask")
+              .font(.subheadline)
+              .foregroundColor(.green)
+            
+            Text("iOS 26+ • Live Activity")
+              .font(.caption2)
+              .foregroundColor(.secondary)
+          } else {
+            Text("Not Available")
+              .font(.subheadline)
+              .foregroundColor(.secondary)
+          }
         }
       }
     }
@@ -349,6 +369,12 @@ struct BackgroundDownloadsInfoView: View {
             description: "Uses iOS Background App Refresh to ensure downloads continue reliably."
           )
           
+          InfoSection(
+            icon: "timer",
+            title: "Extended Processing",
+            description: "Uses BGContinuedProcessingTask for longer background execution, allowing larger video files to download completely."
+          )
+          
           VStack(alignment: .leading, spacing: 8) {
             Text("Requirements")
               .font(.headline)
@@ -427,6 +453,20 @@ struct RequirementRow: View {
   }
 }
 
+#else
+// MARK: - macOS Placeholder
+struct BackgroundDownloadsSettingsView: View {
+  var body: some View {
+    Text("Background downloads are only available on iOS")
+      .navigationTitle("Background Downloads")
+  }
+}
+
+struct BackgroundDownloadsInfoView: View {
+  var body: some View {
+    Text("Not available on this platform")
+  }
+}
 #endif
 
 // MARK: - Preview
@@ -438,7 +478,9 @@ struct BackgroundDownloadsSettingsView_Previews: PreviewProvider {
         .environmentObject(AppContext.shared as AppContextProtocol)
     }
     #else
-    Text("iOS only feature")
+    NavigationStack {
+      BackgroundDownloadsSettingsView()
+    }
     #endif
   }
 } 

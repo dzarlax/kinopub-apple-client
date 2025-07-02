@@ -2,11 +2,48 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>BGTaskSchedulerPermittedIdentifiers</key>
+	<array>
+		<string>com.kinopub.backgroundDownloads.task</string>
+		<string>com.kinopub.backgroundDownloads.*</string>
+		<string>com.kinopub.background.sync</string>
+	</array>
 	<key>BaseURL</key>
 	<string>https://api.service-kp.com</string>
 	<key>ClientID</key>
 	<string>xbmc</string>
 	<key>ClientSecret</key>
 	<string>cgg3gtifu46urtfp2zp1nqtba0k2ezxh</string>
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<key>NSAllowsArbitraryLoads</key>
+		<true/>
+	</dict>
+	<!-- Live Activities Support for BGContinuedProcessingTask -->
+	<!-- Live Activities временно отключены -->
+	<!-- <key>NSSupportsLiveActivities</key> -->
+	<!-- <true/> -->
+	
+	<!-- <key>NSSupportsLiveActivitiesFrequentUpdates</key> -->
+	<!-- <true/> -->
+	
+	<!-- WidgetKit Extension Support -->
+	<!-- <key>NSExtension</key> -->
+	<!-- <dict> -->
+	<!-- <key>NSExtensionPointIdentifier</key> -->
+	<!-- <string>com.apple.widgetkit-extension</string> -->
+	<!-- <key>NSExtensionPrincipalClass</key> -->
+	<!-- <string>$(PRODUCT_MODULE_NAME).WidgetBundle</string> -->
+	<!-- </dict> -->
+	
+	<!-- Push Notifications Support for Live Activities -->
+	<key>aps-environment</key>
+	<string>development</string>
+	
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>fetch</string>
+		<string>processing</string>
+	</array>
 </dict>
 </plist>

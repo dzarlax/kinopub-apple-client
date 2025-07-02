@@ -11,6 +11,7 @@ import KinoPubBackend
 import KinoPubKit
 import KinoPubLogging
 import OSLog
+// import ActivityKit  // Временно отключено
 
 #if os(iOS)
 import UIKit
@@ -29,6 +30,20 @@ extension EnvironmentValues {
   }
 }
 
+// MARK: - Background Downloads Provider
+
+protocol BackgroundDownloadsProvider {
+  func enableBackgroundDownloads() async -> Bool
+  var isBackgroundDownloadsEnabled: Bool { get }
+  
+  #if os(iOS)
+  var backgroundTaskManager: BackgroundTaskManager? { get }
+  var notificationManager: DownloadNotificationManager? { get }
+  // @available(iOS 26.0, *)
+  // var liveActivityManager: LiveActivityManager? { get }  // Временно отключено
+  #endif
+}
+
 // MARK: - AppContextProtocol
 
 typealias AppContextProtocol = AuthorizationServiceProvider
@@ -41,6 +56,7 @@ typealias AppContextProtocol = AuthorizationServiceProvider
 & FileSaverProvider
 & UserServiceProvider
 & UserActionsServiceProvider
+& BackgroundDownloadsProvider
 
 // MARK: - AppContext
 
@@ -56,6 +72,11 @@ struct AppContext: AppContextProtocol {
   var downloadManager: DownloadManager<DownloadMeta>
   var downloadedFilesDatabase: DownloadedFilesDatabase<DownloadMeta>
   var actionsService: UserActionsService
+  
+  #if os(iOS)
+  // @available(iOS 26.0, *)
+  // var liveActivityManager: LiveActivityManager?  // Временно отключено
+  #endif
   
   static let shared: AppContext = {
     let configuration = BundleConfiguration()
@@ -89,6 +110,30 @@ struct AppContext: AppContextProtocol {
       accessTokenService: accessTokenService
     )
     
+    #if os(iOS)
+    // let liveActivityManager: LiveActivityManager?  // Временно отключено
+    // if #available(iOS 26.0, *) {
+    //   liveActivityManager = LiveActivityManager()
+    // } else {
+    //   liveActivityManager = nil
+    // }
+    #endif
+    
+    #if os(iOS)
+    let context = AppContext(
+      configuration: configuration,
+      authService: authService,
+      contentService: VideoContentServiceImpl(apiClient: apiClient),
+      accessTokenService: accessTokenService,
+      userService: UserServiceImpl(apiClient: apiClient),
+      keychainStorage: keychainStorage,
+      fileSaver: fileSaver,
+      downloadManager: downloadManager,
+      downloadedFilesDatabase: downloadedFilesDatabase,
+      actionsService: UserActionsServiceImpl(apiClient: apiClient)
+      // liveActivityManager: liveActivityManager  // Временно отключено
+    )
+    #else
     let context = AppContext(
       configuration: configuration,
       authService: authService,
@@ -101,6 +146,7 @@ struct AppContext: AppContextProtocol {
       downloadedFilesDatabase: downloadedFilesDatabase,
       actionsService: UserActionsServiceImpl(apiClient: apiClient)
     )
+    #endif
     
     // Setup background downloads
     setupBackgroundDownloads(downloadManager: downloadManager)
@@ -180,5 +226,7 @@ extension AppContext {
   var notificationManager: DownloadNotificationManager? {
     return downloadManager.notificationManager
   }
+  
+
   #endif
 }

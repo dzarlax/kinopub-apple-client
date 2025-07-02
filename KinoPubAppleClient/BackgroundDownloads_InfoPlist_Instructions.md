@@ -22,8 +22,11 @@ Add the following entries to your `Info.plist` file to enable background downloa
 <array>
     <string>com.kinopub.background.downloads</string>
     <string>com.kinopub.background.sync</string>
+    <string>com.kinopub.backgroundDownloads.*</string>
 </array>
 ```
+
+**Note:** The `com.kinopub.backgroundDownloads.*` identifier uses wildcard notation required for `BGContinuedProcessingTask` on iOS 26+ devices, which provides extended background processing time for larger video downloads.
 
 ### 3. Network Usage Description (Recommended)
 
@@ -63,6 +66,7 @@ Add the following entries to your `Info.plist` file to enable background downloa
     <array>
         <string>com.kinopub.background.downloads</string>
         <string>com.kinopub.background.sync</string>
+        <string>com.kinopub.backgroundDownloads.*</string>
     </array>
     
     <!-- Network Usage -->
@@ -110,10 +114,42 @@ In Xcode project settings:
    - ✅ Background fetch
    - ✅ Background processing
 
+## BGContinuedProcessingTask Support (iOS 26+)
+
+Starting with iOS 26, the app uses `BGContinuedProcessingTask` instead of `BGProcessingTask` for improved background processing:
+
+### Benefits
+- **Extended execution time**: Longer background processing for large video downloads
+- **Live Activity progress**: Users can see download progress and cancel if needed
+- **Better resource management**: System allocates resources more efficiently
+- **GPU support**: Can request background GPU access if needed for video processing
+- **Improved reliability**: Designed specifically for long-running operations like media downloads
+
+### Key Features
+- **Wildcard identifiers**: Uses `com.kinopub.backgroundDownloads.*` notation
+- **Submission strategies**: 
+  - `.queue` (default): Queues task to run as soon as possible
+  - `.fail`: Fails immediately if system can't run task right away
+- **Foreground submission**: Tasks must be submitted from foreground as result of user action
+- **Progress reporting**: Required to avoid system termination
+- **Resource requests**: Can request additional resources like GPU background access
+
+### Automatic Fallback
+- iOS 26+: Uses `BGContinuedProcessingTask` for optimal performance
+- iOS 13-25: Falls back to `BGProcessingTask` for compatibility
+- The app automatically detects iOS version and uses the appropriate task type
+
+### Requirements
+- Task identifier `com.kinopub.backgroundDownloads.*` must be declared in Info.plist
+- Submission must happen from foreground (e.g., when user taps download button)
+- Progress reporting implementation required for long-running tasks
+- All existing Background App Refresh permissions still apply
+- Works seamlessly with existing download infrastructure
+
 ## Important Notes
 
 - Background downloads work only on physical devices
-- iOS limits background execution time
+- iOS limits background execution time (extended on iOS 17+ with BGContinuedProcessingTask)
 - Users can disable background refresh per app
 - Respect low power mode and cellular data settings
 - Background tasks may be throttled by the system
