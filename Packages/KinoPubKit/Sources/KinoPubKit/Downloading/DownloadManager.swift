@@ -332,17 +332,14 @@ public class DownloadManager<Meta: Codable & Equatable>: NSObject, URLSessionDow
     downloadQueue.async { [weak self] in
       guard let self = self else { return }
       
-      Logger.kit.info("[DOWNLOAD] Starting to restore pending downloads...")
       let pendingDownloads = self.pendingDownloadsDatabase.readPendingDownloads()
-      Logger.kit.info("[DOWNLOAD] Found \(pendingDownloads.count) pending downloads to restore")
+      if pendingDownloads.count > 0 {
+        Logger.kit.info("[DOWNLOAD] Restoring \(pendingDownloads.count) pending downloads")
+      }
       
-      for (index, pendingDownload) in pendingDownloads.enumerated() {
-        Logger.kit.info("[DOWNLOAD] Restoring download \(index + 1)/\(pendingDownloads.count): \(pendingDownload.url)")
-        Logger.kit.debug("[DOWNLOAD] Pending download state: \(pendingDownload.state), progress: \(pendingDownload.progress)")
-        
+      for pendingDownload in pendingDownloads {
         // Проверяем, не активна ли уже эта загрузка
         if self.activeDownloads[pendingDownload.url] != nil {
-          Logger.kit.warning("[DOWNLOAD] Download already active, skipping: \(pendingDownload.url)")
           continue
         }
         
@@ -350,20 +347,14 @@ public class DownloadManager<Meta: Codable & Equatable>: NSObject, URLSessionDow
         
         // Восстанавливаем resumeData если есть
         if let resumeData = pendingDownload.resumeData {
-          Logger.kit.debug("[DOWNLOAD] Restoring resume data (\(resumeData.count) bytes)")
           download.setResumeData(resumeData)
-        } else {
-          Logger.kit.debug("[DOWNLOAD] No resume data available")
         }
         
         self.activeDownloads[pendingDownload.url] = download
         self.downloadProgress[pendingDownload.url] = pendingDownload.progress
         
         // Автоматически возобновляем загрузку
-        Logger.kit.info("[DOWNLOAD] Resuming restored download: \(pendingDownload.url)")
         download.resume()
-        
-        Logger.kit.info("[DOWNLOAD] Successfully restored download for: \(pendingDownload.url)")
       }
       
       DispatchQueue.main.async {

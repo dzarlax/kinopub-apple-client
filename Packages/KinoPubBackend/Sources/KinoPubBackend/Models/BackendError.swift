@@ -11,6 +11,14 @@ public enum BackendErrorCode: String, Codable {
   case authorizationPending = "authorization_pending"
   case invalidClient = "invalid_client"
   case unauthorized = "unauthorized"
+  case itemNotFound = "Requested item not found."
+  case unknown = "unknown"
+  
+  public init(from decoder: Decoder) throws {
+    let container = try decoder.singleValueContainer()
+    let value = try container.decode(String.self)
+    self = BackendErrorCode(rawValue: value) ?? .unknown
+  }
 }
 
 public struct BackendError: Error, Codable {

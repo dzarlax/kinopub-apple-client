@@ -49,7 +49,6 @@ public class Download<Meta: Codable & Equatable>: ObservableObject {
     self.metadata = metadata
     self.manager = manager
     self.state = .queued
-    Logger.kit.debug("[DOWNLOAD] Download for url: \(url) is queued")
   }
   
   /// Pauses the download. If the download is already paused or not in progress, this method has no effect.

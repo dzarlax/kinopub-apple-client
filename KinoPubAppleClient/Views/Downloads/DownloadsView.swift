@@ -31,6 +31,13 @@ struct DownloadsView: View {
       }
       .navigationTitle("Downloads")
       .background(Color.KinoPub.background)
+      .toolbar {
+        ToolbarItem(placement: .navigationBarTrailing) {
+          Button("Тест") {
+            catalog.createTestSeason()
+          }
+        }
+      }
       .navigationDestination(for: DownloadsRoutes.self) { route in
         switch route {
         case .player(let item):
@@ -47,7 +54,17 @@ struct DownloadsView: View {
       }
       .onAppear(perform: {
         catalog.refresh()
+        
+        // Автоматически обновляем статусы просмотра при появлении экрана
+        Task {
+          await catalog.refreshAllWatchStatuses(userActionsService: appContext.actionsService)
+        }
       })
+      .refreshable {
+        // Pull-to-refresh для обновления статусов просмотра
+        catalog.refresh()
+        await catalog.refreshAllWatchStatuses(userActionsService: appContext.actionsService)
+      }
     }
     
   }
@@ -87,6 +104,11 @@ struct DownloadsView: View {
         },
         onPlayEpisode: { episode in
           navigationState.downloadsRoutes.append(.player(episode.metadata))
+        },
+        onToggleWatchStatus: { episode in
+          Task {
+            await catalog.toggleEpisodeWatchStatus(episode: episode, userActionsService: appContext.actionsService)
+          }
         }
       )
       .id(seasonGroup.id) // Явно устанавливаем ID для SwiftUI

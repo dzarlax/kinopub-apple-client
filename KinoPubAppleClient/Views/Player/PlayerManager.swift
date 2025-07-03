@@ -22,7 +22,7 @@ enum WatchMode {
 class PlayerManager: ObservableObject {
   
   @Published var isPlaying: Bool = false
-  @Published var watchMark: WatchData?
+  @Published var watchMark: KinoPubBackend.WatchData?
   @Published var continueTime: TimeInterval?
   
   lazy var player = AVPlayer(url: fileURL)

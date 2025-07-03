@@ -20,3 +20,11 @@ protocol DownloadManagerProvider {
 protocol FileSaverProvider {
   var fileSaver: FileSaving { get set }
 }
+
+protocol SeasonDownloadManagerProvider {
+  var seasonDownloadManager: SeasonDownloadManager { get set }
+}
+
+protocol UserActionsServiceProvider {
+  var actionsService: UserActionsService { get set }
+}

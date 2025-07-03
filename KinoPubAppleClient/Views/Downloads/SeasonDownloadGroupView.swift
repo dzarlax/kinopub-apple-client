@@ -19,6 +19,7 @@ struct SeasonDownloadGroupView: View {
   let onPauseResumeGroup: () -> Void
   let onToggleEpisode: (EpisodeDownloadInfo) -> Void
   let onPlayEpisode: (EpisodeDownloadInfo) -> Void
+  let onToggleWatchStatus: (EpisodeDownloadInfo) -> Void
   
   // Добавляем локальное состояние для отслеживания раскрытия
   @State private var localIsExpanded: Bool = false
@@ -47,8 +48,10 @@ struct SeasonDownloadGroupView: View {
       localIsExpanded = seasonGroup.isExpanded
     }
     .onChange(of: seasonGroup.isExpanded) { newValue in
-      if localIsExpanded != newValue {
+      print("📱 [UI] seasonGroup.isExpanded changed for \(seasonGroup.id): \(localIsExpanded) -> \(newValue)")
+      DispatchQueue.main.async {
         localIsExpanded = newValue
+        print("📱 [UI] localIsExpanded updated for \(seasonGroup.id): \(localIsExpanded)")
       }
     }
   }
@@ -61,10 +64,12 @@ struct SeasonDownloadGroupView: View {
           .resizable()
           .aspectRatio(contentMode: .fill)
       } placeholder: {
-        Rectangle()
-          .fill(Color.gray.opacity(0.3))
+        Image(systemName: "tv")
+          .font(.title2)
+          .foregroundColor(.secondary)
       }
       .frame(width: 60, height: 90)
+      .clipped()
       .cornerRadius(8)
       
       // Информация о сезоне (кликабельная область для раскрытия)
@@ -104,7 +109,6 @@ struct SeasonDownloadGroupView: View {
       .contentShape(Rectangle())
       .onTapGesture {
         print("🔄 Info area toggle for group: \(seasonGroup.id), current state: \(localIsExpanded)")
-        localIsExpanded.toggle()
         onToggleExpansion()
       }
       
@@ -112,8 +116,7 @@ struct SeasonDownloadGroupView: View {
       
       // Кнопка раскрытия (отдельно от других кнопок)
       Button(action: {
-        print("🔄 Local toggle for group: \(seasonGroup.id), current state: \(localIsExpanded)")
-        localIsExpanded.toggle()
+        print("🔄 Button toggle for group: \(seasonGroup.id), current state: \(localIsExpanded)")
         onToggleExpansion()
       }) {
         Image(systemName: localIsExpanded ? "chevron.up.circle.fill" : "chevron.down.circle.fill")
@@ -162,7 +165,8 @@ struct SeasonDownloadGroupView: View {
             episode: episode,
             activeDownload: activeDownloads.first { $0.url == episode.downloadUrl },
             onToggle: { onToggleEpisode(episode) },
-            onPlay: { onPlayEpisode(episode) }
+            onPlay: { onPlayEpisode(episode) },
+            onToggleWatchStatus: { onToggleWatchStatus(episode) }
           )
         }
       }
@@ -179,6 +183,7 @@ private struct EpisodeRowView: View {
   let activeDownload: Download<DownloadMeta>?
   let onToggle: () -> Void
   let onPlay: () -> Void
+  let onToggleWatchStatus: () -> Void
   
   private var isDownloading: Bool {
     activeDownload?.state == .inProgress
@@ -192,8 +197,26 @@ private struct EpisodeRowView: View {
     activeDownload?.progress ?? (episode.isDownloaded ? 1.0 : 0.0)
   }
   
+  private var watchStatusColor: Color {
+    if episode.isWatched {
+      return .green
+    } else if episode.watchProgress > 0.1 {
+      return .orange
+    } else {
+      return .secondary
+    }
+  }
+  
   var body: some View {
     HStack(spacing: 12) {
+      // Индикатор статуса просмотра (большой кружок слева) - кликабельный
+      Button(action: onToggleWatchStatus) {
+        Circle()
+          .fill(watchStatusColor)
+          .frame(width: 12, height: 12)
+      }
+      .buttonStyle(PlainButtonStyle())
+      
       // Номер эпизода
       Text("\(episode.episodeNumber)")
         .font(.caption)
@@ -203,15 +226,33 @@ private struct EpisodeRowView: View {
       
       // Название эпизода 
       VStack(alignment: .leading, spacing: 2) {
-        Text(episode.episodeTitle)
-          .font(.subheadline)
-          .foregroundColor(.primary)
-          .lineLimit(1)
+        HStack {
+          Text(episode.episodeTitle)
+            .font(.subheadline)
+            .foregroundColor(.primary)
+            .lineLimit(1)
+          
+          // Статус просмотра в тексте
+          if episode.isWatched {
+            Image(systemName: "eye.fill")
+              .font(.caption)
+              .foregroundColor(.green)
+          } else if episode.watchProgress > 0.1 {
+            Image(systemName: "eye")
+              .font(.caption)
+              .foregroundColor(.orange)
+          }
+        }
         
         // Прогресс бар для активных загрузок
         if let activeDownload = activeDownload {
           ProgressView(value: activeDownload.progress)
             .progressViewStyle(LinearProgressViewStyle())
+            .scaleEffect(y: 0.5)
+        } else if episode.watchProgress > 0.1 && !episode.isWatched {
+          // Прогресс просмотра для частично просмотренных эпизодов
+          ProgressView(value: episode.watchProgress)
+            .progressViewStyle(LinearProgressViewStyle(tint: .orange))
             .scaleEffect(y: 0.5)
         }
       }
@@ -297,7 +338,11 @@ private struct EpisodeRowView: View {
         imageUrl: "",
         metadata: WatchingMetadata(id: 1, video: 1, season: 1)
       ),
-      isDownloaded: true
+      isDownloaded: true,
+      downloadProgress: 1.0,
+      isWatched: true,
+      watchProgress: 1.0,
+      lastWatchTime: 2400
     ),
     EpisodeDownloadInfo(
       groupId: "test",
@@ -312,7 +357,11 @@ private struct EpisodeRowView: View {
         imageUrl: "",
         metadata: WatchingMetadata(id: 2, video: 2, season: 1)
       ),
-      isDownloaded: false
+      isDownloaded: true,
+      downloadProgress: 1.0,
+      isWatched: false,
+      watchProgress: 0.3,
+      lastWatchTime: 600
     )
   ]
   
@@ -324,7 +373,8 @@ private struct EpisodeRowView: View {
     onRemoveGroup: {},
     onPauseResumeGroup: {},
     onToggleEpisode: { _ in },
-    onPlayEpisode: { _ in }
+    onPlayEpisode: { _ in },
+    onToggleWatchStatus: { _ in }
   )
   .padding()
   .background(Color.KinoPub.background)

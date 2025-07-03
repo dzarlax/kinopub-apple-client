@@ -46,17 +46,20 @@ protocol BackgroundDownloadsProvider {
 
 // MARK: - AppContextProtocol
 
-typealias AppContextProtocol = AuthorizationServiceProvider
+protocol AppContextProtocol: 
+  ConfigurationProvider
+& AuthorizationServiceProvider
 & VideoContentServiceProvider
-& ConfigurationProvider
-& KeychainStorageProvider
 & AccessTokenServiceProvider
+& UserServiceProvider
+& KeychainStorageProvider
+& FileSaverProvider
 & DownloadManagerProvider
 & DownloadedFilesDatabaseProvider
-& FileSaverProvider
-& UserServiceProvider
-& UserActionsServiceProvider
 & BackgroundDownloadsProvider
+& SeasonDownloadManagerProvider
+& UserActionsServiceProvider {
+}
 
 // MARK: - AppContext
 
@@ -106,6 +109,8 @@ class AppContext: AppContextProtocol, ObservableObject {
   }
   
   static let shared: AppContext = {
+    print("🔍 [APPCONTEXT] Starting AppContext.shared initialization...")
+    Logger.app.info("🔍 [APPCONTEXT] Starting AppContext.shared initialization...")
     let configuration = BundleConfiguration()
     let keychainStorage = KeychainStorageImpl()
     let accessTokenService = AccessTokenServiceImpl(storage: keychainStorage)
@@ -124,10 +129,14 @@ class AppContext: AppContextProtocol, ObservableObject {
     )
     
     // Season Download Manager
+    print("🔍 [APPCONTEXT] Creating SeasonDownloadManager...")
+    Logger.app.info("🔍 [APPCONTEXT] Creating SeasonDownloadManager...")
     let seasonDownloadManager = SeasonDownloadManager(
       downloadManager: downloadManager,
       fileSaver: fileSaver
     )
+    print("🔍 [APPCONTEXT] SeasonDownloadManager created successfully")
+    Logger.app.info("🔍 [APPCONTEXT] SeasonDownloadManager created successfully")
     
     // Api Client with caching
     let cacheManager = MemoryCacheManager()
@@ -185,6 +194,9 @@ class AppContext: AppContextProtocol, ObservableObject {
     
     // Setup background downloads
     setupBackgroundDownloads(downloadManager: downloadManager)
+    
+    print("🔍 [APPCONTEXT] AppContext.shared initialization completed!")
+    Logger.app.info("🔍 [APPCONTEXT] AppContext.shared initialization completed!")
     
     return context
   }()

@@ -73,6 +73,11 @@ public struct EpisodeDownloadInfo: Codable, Identifiable, Equatable, Sendable {
   public var downloadProgress: Float
   public let createdAt: Date
   
+  // Информация о просмотре
+  public var isWatched: Bool
+  public var watchProgress: Float // 0.0 - 1.0
+  public var lastWatchTime: TimeInterval // позиция в секундах
+  
   public init(
     groupId: String,
     episodeNumber: Int,
@@ -80,7 +85,10 @@ public struct EpisodeDownloadInfo: Codable, Identifiable, Equatable, Sendable {
     downloadUrl: URL,
     metadata: DownloadMeta,
     isDownloaded: Bool = false,
-    downloadProgress: Float = 0.0
+    downloadProgress: Float = 0.0,
+    isWatched: Bool = false,
+    watchProgress: Float = 0.0,
+    lastWatchTime: TimeInterval = 0.0
   ) {
     self.id = "\(groupId)_episode_\(episodeNumber)"
     self.groupId = groupId
@@ -90,6 +98,9 @@ public struct EpisodeDownloadInfo: Codable, Identifiable, Equatable, Sendable {
     self.metadata = metadata
     self.isDownloaded = isDownloaded
     self.downloadProgress = downloadProgress
+    self.isWatched = isWatched
+    self.watchProgress = watchProgress
+    self.lastWatchTime = lastWatchTime
     self.createdAt = Date()
   }
   
