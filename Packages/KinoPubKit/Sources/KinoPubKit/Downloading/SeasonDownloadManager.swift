@@ -200,47 +200,7 @@ public class SeasonDownloadManager: ObservableObject {
     return cleanTitle.trimmingCharacters(in: .whitespaces)
   }
   
-  /// Создает тестовый сезон для отладки
-  @MainActor
-  public func createTestSeason() {
-    print("🔍 [SEASON] Creating test season...")
-    Logger.kit.info("[SEASON] Creating test season...")
-    
-    let testGroup = SeasonDownloadGroup(
-      mediaId: 12345,
-      seasonNumber: 1,
-      seriesTitle: "Тестовый сериал",
-      seasonTitle: "Сезон 1",
-      imageUrl: "https://example.com/poster.jpg",
-      totalEpisodes: 3
-    )
-    
-    seasonGroups.append(testGroup)
-    
-    // Создаем тестовые эпизоды
-    for i in 1...3 {
-      let testEpisode = EpisodeDownloadInfo(
-        groupId: testGroup.id,
-        episodeNumber: i,
-        episodeTitle: "Эпизод \(i)",
-        downloadUrl: URL(string: "https://example.com/episode\(i).mp4")!,
-        metadata: DownloadMeta(
-          id: 12345,
-          files: [],
-          originalTitle: "Тестовый сериал S1E\(i)",
-          localizedTitle: "Тестовый сериал Сезон 1 Эпизод \(i)",
-          imageUrl: "https://example.com/poster.jpg",
-          metadata: WatchingMetadata(id: i, video: i, season: 1)
-        )
-      )
-      episodeInfos.append(testEpisode)
-    }
-    
-    debouncedSave()
-    
-    print("🔍 [SEASON] Test season created with \(self.seasonGroups.count) groups and \(self.episodeInfos.count) episodes")
-    Logger.kit.info("[SEASON] Test season created with \(self.seasonGroups.count) groups and \(self.episodeInfos.count) episodes")
-  }
+
   
   /// Начинает скачивание всего сезона (асинхронно)
   @MainActor

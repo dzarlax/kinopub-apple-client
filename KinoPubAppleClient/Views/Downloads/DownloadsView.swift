@@ -31,13 +31,6 @@ struct DownloadsView: View {
       }
       .navigationTitle("Downloads")
       .background(Color.KinoPub.background)
-      .toolbar {
-        ToolbarItem(placement: .navigationBarTrailing) {
-          Button("Тест") {
-            catalog.createTestSeason()
-          }
-        }
-      }
       .navigationDestination(for: DownloadsRoutes.self) { route in
         switch route {
         case .player(let item):

@@ -127,12 +127,7 @@ class DownloadsCatalog: ObservableObject {
   
   // MARK: - Season Downloads
   
-  func createTestSeason() {
-    print("🔍 [CATALOG] Creating test season...")
-    Logger.app.info("[CATALOG] Creating test season...")
-    seasonDownloadManager.createTestSeason()
-    refresh()
-  }
+
   
   func groupExistingDownloads() {
     print("🔍 [CATALOG] Grouping existing downloads...")
