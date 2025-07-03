@@ -60,7 +60,7 @@ typealias AppContextProtocol = AuthorizationServiceProvider
 
 // MARK: - AppContext
 
-struct AppContext: AppContextProtocol {
+class AppContext: AppContextProtocol, ObservableObject {
   
   var configuration: Configuration
   var authService: AuthorizationService
@@ -71,12 +71,39 @@ struct AppContext: AppContextProtocol {
   var fileSaver: FileSaving
   var downloadManager: DownloadManager<DownloadMeta>
   var downloadedFilesDatabase: DownloadedFilesDatabase<DownloadMeta>
+  var seasonDownloadManager: SeasonDownloadManager
   var actionsService: UserActionsService
   
   #if os(iOS)
   // @available(iOS 26.0, *)
   // var liveActivityManager: LiveActivityManager?  // Временно отключено
   #endif
+  
+  init(
+    configuration: Configuration,
+    authService: AuthorizationService,
+    contentService: VideoContentService,
+    accessTokenService: AccessTokenService,
+    userService: UserService,
+    keychainStorage: KeychainStorage,
+    fileSaver: FileSaving,
+    downloadManager: DownloadManager<DownloadMeta>,
+    downloadedFilesDatabase: DownloadedFilesDatabase<DownloadMeta>,
+    seasonDownloadManager: SeasonDownloadManager,
+    actionsService: UserActionsService
+  ) {
+    self.configuration = configuration
+    self.authService = authService
+    self.contentService = contentService
+    self.accessTokenService = accessTokenService
+    self.userService = userService
+    self.keychainStorage = keychainStorage
+    self.fileSaver = fileSaver
+    self.downloadManager = downloadManager
+    self.downloadedFilesDatabase = downloadedFilesDatabase
+    self.seasonDownloadManager = seasonDownloadManager
+    self.actionsService = actionsService
+  }
   
   static let shared: AppContext = {
     let configuration = BundleConfiguration()
@@ -94,6 +121,12 @@ struct AppContext: AppContextProtocol {
       maxConcurrentDownloads: 3,
       timeoutInterval: 60.0,
       backgroundSessionIdentifier: "com.kinopub.backgroundDownloadSession"
+    )
+    
+    // Season Download Manager
+    let seasonDownloadManager = SeasonDownloadManager(
+      downloadManager: downloadManager,
+      fileSaver: fileSaver
     )
     
     // Api Client with caching
@@ -130,6 +163,7 @@ struct AppContext: AppContextProtocol {
       fileSaver: fileSaver,
       downloadManager: downloadManager,
       downloadedFilesDatabase: downloadedFilesDatabase,
+      seasonDownloadManager: seasonDownloadManager,
       actionsService: UserActionsServiceImpl(apiClient: apiClient)
       // liveActivityManager: liveActivityManager  // Временно отключено
     )
@@ -144,6 +178,7 @@ struct AppContext: AppContextProtocol {
       fileSaver: fileSaver,
       downloadManager: downloadManager,
       downloadedFilesDatabase: downloadedFilesDatabase,
+      seasonDownloadManager: seasonDownloadManager,
       actionsService: UserActionsServiceImpl(apiClient: apiClient)
     )
     #endif
@@ -227,6 +262,10 @@ extension AppContext {
     return downloadManager.notificationManager
   }
   
-
   #endif
+  
+  // MARK: - Mock for testing
+  static func mock() -> AppContext {
+    return AppContext.shared
+  }
 }

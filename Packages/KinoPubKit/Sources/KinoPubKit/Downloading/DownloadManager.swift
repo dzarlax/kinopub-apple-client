@@ -38,6 +38,7 @@ public class DownloadManager<Meta: Codable & Equatable>: NSObject, URLSessionDow
   // MARK: - Private Properties
   private let fileSaver: FileSaving
   private let database: DownloadedFilesDatabase<Meta>
+  private let pendingDownloadsDatabase: PendingDownloadsDatabase<Meta>
   private let downloadQueue = DispatchQueue(label: "com.kinopub.downloads", qos: .utility)
   private var cancellables = Set<AnyCancellable>()
   
@@ -67,6 +68,7 @@ public class DownloadManager<Meta: Codable & Equatable>: NSObject, URLSessionDow
   ) {
     self.fileSaver = fileSaver
     self.database = database
+    self.pendingDownloadsDatabase = PendingDownloadsDatabase(fileSaver: fileSaver)
     self.maxConcurrentDownloads = maxConcurrentDownloads
     self.timeoutInterval = timeoutInterval
     self.backgroundSessionIdentifier = backgroundSessionIdentifier
@@ -74,6 +76,9 @@ public class DownloadManager<Meta: Codable & Equatable>: NSObject, URLSessionDow
     
     setupNotifications()
     setupBackgroundSupport()
+    
+    // Восстанавливаем незавершенные загрузки при инициализации
+    restorePendingDownloads()
   }
 
   // MARK: - Lazy Session
@@ -111,6 +116,11 @@ public class DownloadManager<Meta: Codable & Equatable>: NSObject, URLSessionDow
       activeDownloads[url] = download
       downloadProgress[url] = 0.0
       
+      // Сохраняем информацию о незавершенной загрузке
+      let pendingDownload = PendingDownloadInfo(url: url, metadata: metadata, state: "started")
+      pendingDownloadsDatabase.savePendingDownload(pendingDownload)
+      Logger.kit.info("[DOWNLOAD] Saved pending download info for: \(url)")
+      
       DispatchQueue.main.async {
         self.objectWillChange.send()
       }
@@ -140,6 +150,9 @@ public class DownloadManager<Meta: Codable & Equatable>: NSObject, URLSessionDow
       self.activeDownloads.removeValue(forKey: url)
       self.downloadProgress.removeValue(forKey: url)
       
+      // Удаляем из базы незавершенных загрузок
+      self.pendingDownloadsDatabase.removePendingDownload(for: url)
+      
       #if os(iOS)
       self.notificationManager.clearNotifications(for: url)
       #endif
@@ -159,6 +172,9 @@ public class DownloadManager<Meta: Codable & Equatable>: NSObject, URLSessionDow
       self.activeDownloads.removeValue(forKey: url)
       self.downloadProgress.removeValue(forKey: url)
       
+      // Удаляем из базы незавершенных загрузок при успешном завершении
+      self.pendingDownloadsDatabase.removePendingDownload(for: url)
+      
       DispatchQueue.main.async {
         self.objectWillChange.send()
       }
@@ -171,7 +187,11 @@ public class DownloadManager<Meta: Codable & Equatable>: NSObject, URLSessionDow
     downloadQueue.async { [weak self] in
       guard let self = self else { return }
       
-      self.activeDownloads.values.forEach { $0.pause() }
+      for download in self.activeDownloads.values {
+        download.pause()
+        // Состояние будет обновлено в методе pause() через updatePendingDownloadOnPause
+      }
+      
       Logger.kit.info("[DOWNLOAD] Paused all downloads")
     }
   }
@@ -279,6 +299,17 @@ public class DownloadManager<Meta: Codable & Equatable>: NSObject, URLSessionDow
   private func handleAppDidEnterBackground() {
     Logger.kit.info("[DOWNLOAD] App entered background, background downloads will continue")
     
+    // Сохраняем состояние всех активных загрузок
+    downloadQueue.async { [weak self] in
+      guard let self = self else { return }
+      
+      for (url, download) in self.activeDownloads {
+        let progress = self.downloadProgress[url] ?? 0.0
+        let resumeData = download.getResumeData()
+        self.updatePendingDownload(url: url, resumeData: resumeData, progress: progress, state: "background")
+      }
+    }
+    
     if backgroundDownloadsEnabled {
       backgroundTaskManager.scheduleBackgroundDownloadProcessing()
     }
@@ -293,6 +324,92 @@ public class DownloadManager<Meta: Codable & Equatable>: NSObject, URLSessionDow
     }
   }
   #endif
+
+  // MARK: - Pending Downloads Management
+  
+  /// Восстанавливает незавершенные загрузки после перезапуска приложения
+  private func restorePendingDownloads() {
+    downloadQueue.async { [weak self] in
+      guard let self = self else { return }
+      
+      Logger.kit.info("[DOWNLOAD] Starting to restore pending downloads...")
+      let pendingDownloads = self.pendingDownloadsDatabase.readPendingDownloads()
+      Logger.kit.info("[DOWNLOAD] Found \(pendingDownloads.count) pending downloads to restore")
+      
+      for (index, pendingDownload) in pendingDownloads.enumerated() {
+        Logger.kit.info("[DOWNLOAD] Restoring download \(index + 1)/\(pendingDownloads.count): \(pendingDownload.url)")
+        Logger.kit.debug("[DOWNLOAD] Pending download state: \(pendingDownload.state), progress: \(pendingDownload.progress)")
+        
+        // Проверяем, не активна ли уже эта загрузка
+        if self.activeDownloads[pendingDownload.url] != nil {
+          Logger.kit.warning("[DOWNLOAD] Download already active, skipping: \(pendingDownload.url)")
+          continue
+        }
+        
+        let download = Download(url: pendingDownload.url, metadata: pendingDownload.metadata, manager: self)
+        
+        // Восстанавливаем resumeData если есть
+        if let resumeData = pendingDownload.resumeData {
+          Logger.kit.debug("[DOWNLOAD] Restoring resume data (\(resumeData.count) bytes)")
+          download.setResumeData(resumeData)
+        } else {
+          Logger.kit.debug("[DOWNLOAD] No resume data available")
+        }
+        
+        self.activeDownloads[pendingDownload.url] = download
+        self.downloadProgress[pendingDownload.url] = pendingDownload.progress
+        
+        // Автоматически возобновляем загрузку
+        Logger.kit.info("[DOWNLOAD] Resuming restored download: \(pendingDownload.url)")
+        download.resume()
+        
+        Logger.kit.info("[DOWNLOAD] Successfully restored download for: \(pendingDownload.url)")
+      }
+      
+      DispatchQueue.main.async {
+        self.objectWillChange.send()
+      }
+      
+      // Очищаем старые записи
+      self.pendingDownloadsDatabase.cleanupOldPendingDownloads()
+      Logger.kit.info("[DOWNLOAD] Finished restoring pending downloads")
+    }
+  }
+  
+  /// Обновляет информацию о незавершенной загрузке
+  private func updatePendingDownload(url: URL, resumeData: Data?, progress: Float, state: String) {
+    guard let download = activeDownloads[url] else { return }
+    
+    let updatedPendingDownload = PendingDownloadInfo(
+      url: url, 
+      metadata: download.metadata, 
+      resumeData: resumeData, 
+      progress: progress, 
+      state: state
+    )
+    
+    pendingDownloadsDatabase.updatePendingDownload(updatedPendingDownload)
+  }
+  
+  /// Получает количество незавершенных загрузок
+  public func pendingDownloadsCount() -> Int {
+    return pendingDownloadsDatabase.pendingDownloadsCount()
+  }
+  
+  /// Очищает все незавершенные загрузки
+  public func clearAllPendingDownloads() {
+    pendingDownloadsDatabase.clearAllPendingDownloads()
+  }
+  
+  /// Обновляет незавершенную загрузку при паузе (вызывается из Download)
+  internal func updatePendingDownloadOnPause(url: URL, resumeData: Data?, progress: Float) {
+    updatePendingDownload(url: url, resumeData: resumeData, progress: progress, state: "paused")
+  }
+  
+  /// Получает доступ к базе данных загруженных файлов (для SeasonDownloadManager)
+  public func getDownloadedFiles() -> [DownloadedFileInfo<Meta>]? {
+    return database.readData()
+  }
 
   // MARK: - URLSessionDownloadDelegate
   public func urlSession(_ session: URLSession, downloadTask: URLSessionDownloadTask, didFinishDownloadingTo location: URL) {
@@ -378,6 +495,9 @@ public class DownloadManager<Meta: Codable & Equatable>: NSObject, URLSessionDow
     
     downloadQueue.async { [weak self] in
       self?.downloadProgress[url] = progress
+      
+      // Обновляем информацию о незавершенной загрузке
+      self?.updatePendingDownload(url: url, resumeData: nil, progress: progress, state: "downloading")
     }
     
     DispatchQueue.main.async { [weak self] in

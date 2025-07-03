@@ -34,7 +34,7 @@ struct KinoPubAppleClientApp: App {
   var body: some Scene {
     WindowGroup {
       RootView()
-        .environment(\.appContext, AppContext.shared)
+        .environmentObject(AppContext.shared)
         .environmentObject(navigationState)
         .environmentObject(authState)
         .environmentObject(errorHandler)

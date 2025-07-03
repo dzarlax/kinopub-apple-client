@@ -10,7 +10,7 @@ import SwiftUI
 
 #if os(macOS)
 struct SidebarNavigationDetail: View {
-  @Environment(\.appContext) var appContext
+  @EnvironmentObject var appContext: AppContext
   @EnvironmentObject var navigationState: NavigationState
   @EnvironmentObject var errorHandler: ErrorHandler
   @EnvironmentObject var authState: AuthState
@@ -43,7 +43,7 @@ struct SidebarNavigationDetail: View {
   }
   
   var downloads: some View {
-    DownloadsView(catalog: DownloadsCatalog(downloadsDatabase: appContext.downloadedFilesDatabase, downloadManager: appContext.downloadManager))
+    DownloadsView(catalog: DownloadsCatalog(downloadsDatabase: appContext.downloadedFilesDatabase, downloadManager: appContext.downloadManager, seasonDownloadManager: appContext.seasonDownloadManager))
   }
   
   var profile: some View {

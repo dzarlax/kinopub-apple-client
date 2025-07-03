@@ -13,7 +13,7 @@ struct BookmarksView: View {
   @EnvironmentObject var navigationState: NavigationState
   @EnvironmentObject var authState: AuthState
   @EnvironmentObject var errorHandler: ErrorHandler
-  @Environment(\.appContext) var appContext
+  @EnvironmentObject var appContext: AppContext
   @StateObject private var catalog: BookmarksCatalog
   
   init(catalog: @autoclosure @escaping () -> BookmarksCatalog) {

@@ -102,19 +102,37 @@ class MediaItemModel: ObservableObject {
     }
   }
   
-  func startDownload(item: DownloadableMediaItem, file: FileInfo) {
+    func startDownload(item: DownloadableMediaItem, file: FileInfo) {
     guard let url = URL(string: file.url.http) else {
       errorHandler.handleDownloadError("Invalid URL")
       return
     }
-    
+
     let metadata = DownloadMeta.make(from: item)
     let download = downloadManager.startDownload(url: url, withMetadata: metadata)
-    
+
     // Monitor download progress
     observeDownloadProgress(for: download, fileId: "\(file.id)")
-    
+
     Logger.app.info("Started download for item: \(item.id)")
+  }
+  
+  func startSeasonDownload(mediaItem: MediaItem, season: Season) {
+    // Получаем SeasonDownloadManager из AppContext
+    guard let appContext = AppContext.shared as? AppContext else {
+      Logger.app.error("Failed to get AppContext for season download")
+      return
+    }
+    
+    Task { @MainActor in
+      appContext.seasonDownloadManager.downloadSeason(
+        mediaItem: mediaItem,
+        season: season,
+        quality: "1080p" // По умолчанию 1080p, можно сделать настраиваемым
+      )
+      
+      Logger.app.info("Started season download for: \(mediaItem.title) Season \(season.number)")
+    }
   }
   
   func retry() async {

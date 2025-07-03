@@ -54,12 +54,37 @@ public class Download<Meta: Codable & Equatable>: ObservableObject {
   
   /// Pauses the download. If the download is already paused or not in progress, this method has no effect.
   public func pause() {
-    task?.cancel(byProducingResumeData: { [weak self] data in
-      self?.resumeData = data
-      self?.state = .paused
-      Logger.kit.debug("[DOWNLOAD] Download for url: \(self?.url.absoluteString ?? "") is paused")
+    Logger.kit.info("[DOWNLOAD] Pausing download for: \(self.url)")
+    
+    guard let task = self.task else {
+      Logger.kit.warning("[DOWNLOAD] No task to pause for: \(self.url)")
+      return
+    }
+    
+    task.cancel(byProducingResumeData: { [weak self] data in
+      guard let self = self else { return }
+      
+      Logger.kit.debug("[DOWNLOAD] Received resume data for: \(self.url)")
+      if let data = data {
+        Logger.kit.debug("[DOWNLOAD] Resume data size: \(data.count) bytes")
+        self.resumeData = data
+      } else {
+        Logger.kit.warning("[DOWNLOAD] No resume data received for: \(self.url)")
+      }
+      
+      self.state = .paused
+      
+      // Уведомляем менеджер о паузе с resumeData
+      if let downloadManager = self.manager as? DownloadManager<Meta> {
+        Logger.kit.debug("[DOWNLOAD] Updating pending download on pause for: \(self.url)")
+        downloadManager.updatePendingDownloadOnPause(url: self.url, resumeData: data, progress: self.progress)
+      } else {
+        Logger.kit.error("[DOWNLOAD] Manager is not DownloadManager type")
+      }
+      
+      Logger.kit.info("[DOWNLOAD] Download paused for: \(self.url), progress: \(self.progress)")
     })
-    task = nil
+    self.task = nil
   }
   
   /// Resumes the download. If the download is already in progress, this method has no effect.
@@ -76,6 +101,16 @@ public class Download<Meta: Codable & Equatable>: ObservableObject {
   
   internal func updateProgress(_ progress: Float) {
     self.progress = progress
+  }
+  
+  /// Устанавливает данные для возобновления загрузки
+  internal func setResumeData(_ data: Data) {
+    self.resumeData = data
+  }
+  
+  /// Получает данные для возобновления загрузки
+  internal func getResumeData() -> Data? {
+    return resumeData
   }
   
 }

@@ -13,16 +13,21 @@ struct APIClientErrorHelper {
   static func description(for error: APIClientError) -> String {
     switch error {
     case .urlError:
-      return "Wrong URL"
+      print("🔗 [API Error] URL Error - неправильный URL запроса")
+      return "Неправильный URL запроса"
     case .invalidUrlParams:
-      return "Invalid URL params"
+      print("🔗 [API Error] Invalid URL Params - неверные параметры URL")
+      return "Неверные параметры URL"
     case .decodingError(let error):
-      return "Decoding issue: \(error)"
+      print("📦 [API Error] Decoding Error - ошибка парсинга данных: \(error)")
+      return "Ошибка парсинга данных: \(error.localizedDescription)"
     case .networkError(let error):
+      print("🌐 [API Error] Network Error - сетевая ошибка: \(error)")
       if let error = error as? BackendError {
+        print("🔧 [API Error] Backend Error Code: \(error.errorCode), Message: \(error.errorDescription ?? "No description")")
         return error.errorDescription ?? error.localizedDescription
       }
-      return "Networking issue: \(error)"
+      return "Сетевая ошибка: \(error.localizedDescription)"
     }
   }
 

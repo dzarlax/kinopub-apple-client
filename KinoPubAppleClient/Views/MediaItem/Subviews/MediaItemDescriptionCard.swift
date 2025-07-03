@@ -15,6 +15,7 @@ struct MediaItemDescriptionCard: View {
   var mediaItem: MediaItem
   var isSkeleton: Bool
   var onDownload: (DownloadableMediaItem,FileInfo) -> Void
+  var onSeasonDownload: ((MediaItem, Season) -> Void)?
   var onWatchedToggle: () -> Void
   var onBookmarkHandle: () -> Void
   @State private var selectedDownloadableItem: DownloadableMediaItem?
@@ -94,6 +95,17 @@ struct MediaItemDescriptionCard: View {
       }
       // Picker to select episode or entire media to download
       .confirmationDialog("", isPresented: $showDownloadableItemPicker, titleVisibility: .hidden) {
+        // Добавляем опцию скачивания сезонов целиком
+        if let seasons = mediaItem.seasons, !seasons.isEmpty {
+                     ForEach(seasons, id: \.id) { season in
+             Button("Скачать \(season.fixedTitle) целиком") {
+               onSeasonDownload?(mediaItem, season)
+             }
+           }
+          
+          Divider()
+        }
+        
         ForEach(mediaItem.downloadableItems) { item in
           Button(item.name) {
             selectedDownloadableItem = item
@@ -133,7 +145,7 @@ struct MediaItemDescriptionCard: View {
 struct MediaItemDescriptionCard_Previews: PreviewProvider {
   struct Preview: View {
     var body: some View {
-      MediaItemDescriptionCard(mediaItem: MediaItem.mock(), isSkeleton: true, onDownload: { _,_  in }, onWatchedToggle: {}, onBookmarkHandle: {})
+      MediaItemDescriptionCard(mediaItem: MediaItem.mock(), isSkeleton: true, onDownload: { _,_  in }, onSeasonDownload: nil, onWatchedToggle: {}, onBookmarkHandle: {})
     }
   }
   

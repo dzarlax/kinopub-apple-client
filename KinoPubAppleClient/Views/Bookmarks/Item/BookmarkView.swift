@@ -15,7 +15,7 @@ struct BookmarkView: View {
   @EnvironmentObject var errorHandler: ErrorHandler
   
   @StateObject private var model: BookmarkModel
-  @Environment(\.appContext) var appContext
+  @EnvironmentObject var appContext: AppContext
 
   init(model: @autoclosure @escaping () -> BookmarkModel) {
     _model = StateObject(wrappedValue: model())

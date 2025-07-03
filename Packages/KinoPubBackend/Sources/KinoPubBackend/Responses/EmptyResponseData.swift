@@ -9,4 +9,8 @@ import Foundation
 
 public struct EmptyResponseData: Codable {
   public var status: Int
+  
+  public init(status: Int = 200) {
+    self.status = status
+  }
 }

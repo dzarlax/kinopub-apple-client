@@ -81,3 +81,29 @@ struct DownloadsRoutesLinkProvider: NavigationLinkProvider {
     ""
   }
 }
+
+struct CollectionsRoutesLinkProvider: NavigationLinkProvider {
+  func link(for item: MediaItem) -> any Hashable {
+    CollectionsRoutes.details(item)
+  }
+  
+  func player(for item: any PlayableItem) -> any Hashable {
+    CollectionsRoutes.player(item)
+  }
+  
+  func trailerPlayer(for item: any PlayableItem) -> any Hashable {
+    CollectionsRoutes.trailerPlayer(item)
+  }
+  
+  func seasons(for seasons: [Season]) -> any Hashable {
+    CollectionsRoutes.seasons(seasons)
+  }
+  
+  func season(for season: Season) -> any Hashable {
+    CollectionsRoutes.season(season)
+  }
+  
+  func collection(for collection: Collection) -> any Hashable {
+    CollectionsRoutes.collection(collection)
+  }
+}

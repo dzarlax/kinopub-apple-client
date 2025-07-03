@@ -88,6 +88,7 @@
 		CCF388432A71CB3F00242581 /* AccessTokenPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCF388422A71CB3F00242581 /* AccessTokenPlugin.swift */; };
 		CCFBE1582A86BD91001CBEC1 /* Sidebar.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCFBE1572A86BD91001CBEC1 /* Sidebar.swift */; };
 		CCFDF43E2A828B6B0035D8E0 /* Providers.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCFDF43D2A828B6B0035D8E0 /* Providers.swift */; };
+		DDC92A962E166BF200D0AB1F /* SeasonDownloadGroupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DDC92A952E166BF200D0AB1F /* SeasonDownloadGroupView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -186,6 +187,7 @@
 		CCFDF43D2A828B6B0035D8E0 /* Providers.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Providers.swift; sourceTree = "<group>"; };
 		DDC92A212E15507400D0AB1F /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = System/Library/Frameworks/WidgetKit.framework; sourceTree = SDKROOT; };
 		DDC92A232E15507400D0AB1F /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
+		DDC92A952E166BF200D0AB1F /* SeasonDownloadGroupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SeasonDownloadGroupView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -335,6 +337,7 @@
 		CC71E6FD2A6C0691004AFB3F /* Downloads */ = {
 			isa = PBXGroup;
 			children = (
+				DDC92A952E166BF200D0AB1F /* SeasonDownloadGroupView.swift */,
 				CC6025482AFE70F6003D8391 /* Models */,
 				CC78FC472A82CDF600C5BDFD /* DownloadsCatalog.swift */,
 				CC71E6FE2A6C069D004AFB3F /* DownloadsView.swift */,
@@ -737,6 +740,7 @@
 				CCF388432A71CB3F00242581 /* AccessTokenPlugin.swift in Sources */,
 				CC1E21292A966D4400070F7C /* FilterDataService.swift in Sources */,
 				CCB4879F2A77DAC200FA4483 /* WidthThresholdReader.swift in Sources */,
+				DDC92A962E166BF200D0AB1F /* SeasonDownloadGroupView.swift in Sources */,
 				CC21151D2A7A8FA7001996BD /* MediaItemModel.swift in Sources */,
 				CC71E6F82A6C0626004AFB3F /* ProfileView.swift in Sources */,
 				CC88E1E72A6586E600E9387F /* RootView.swift in Sources */,

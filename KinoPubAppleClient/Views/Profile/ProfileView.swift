@@ -13,7 +13,7 @@ struct ProfileView: View {
   
   @EnvironmentObject var navigationState: NavigationState
   @EnvironmentObject var errorHandler: ErrorHandler
-  @Environment(\.appContext) var appContext
+  @EnvironmentObject var appContext: AppContext
   @StateObject private var model: ProfileModel
   @AppStorage("selectedLanguage") private var selectedLanguage: String = (Locale.current.language.languageCode?.identifier ?? "en")
 
@@ -107,7 +107,7 @@ struct ProfileView: View {
 #if os(iOS)
 // Временная структура для настроек фоновых загрузок
 struct BackgroundDownloadsSettingsView_Internal: View {
-  @Environment(\.appContext) var appContext
+  @EnvironmentObject var appContext: AppContext
   @State private var isBackgroundDownloadsEnabled = false
   @State private var notificationPermissionGranted = false
   @State private var backgroundRefreshStatus: UIBackgroundRefreshStatus = .restricted

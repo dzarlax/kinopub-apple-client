@@ -38,8 +38,8 @@ public struct MediaItem: Codable, Hashable {
   public let finished: Bool
   public let advert: Bool
   public let poorQuality: Bool
-  public let createdAt: Int
-  public let updatedAt: Int
+  public let createdAt: Int?
+  public let updatedAt: Int?
   public let inWatchlist: Bool?
   public let subscribed: Bool?
   public let ac3: Int?

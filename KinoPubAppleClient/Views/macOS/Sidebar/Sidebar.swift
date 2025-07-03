@@ -36,6 +36,20 @@ struct Sidebar: View {
       .listRowBackground(selection == .downloads ? Color.KinoPub.accent : Color.clear)
       .tint(Color.clear)
       
+      NavigationLink(value: NavigationTabs.collections) {
+        Label("Collections", systemImage: "rectangle.stack")
+          .foregroundStyle(Color.white)
+      }
+      .listRowBackground(selection == .collections ? Color.KinoPub.accent : Color.clear)
+      .tint(Color.clear)
+      
+      NavigationLink(value: NavigationTabs.tv) {
+        Label("TV", systemImage: "tv")
+          .foregroundStyle(Color.white)
+      }
+      .listRowBackground(selection == .tv ? Color.KinoPub.accent : Color.clear)
+      .tint(Color.clear)
+      
       NavigationLink(value: NavigationTabs.profile) {
         Label("Profile", systemImage: "person.crop.circle")
           .foregroundStyle(Color.white)

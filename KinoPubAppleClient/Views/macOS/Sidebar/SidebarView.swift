@@ -13,7 +13,7 @@ import KinoPubBackend
 #if os(macOS)
 struct SidebarView: View {
   
-  @Environment(\.appContext) var appContext
+  @EnvironmentObject var appContext: AppContext
   @EnvironmentObject var navigationState: NavigationState
   @EnvironmentObject var errorHandler: ErrorHandler
   @EnvironmentObject var authState: AuthState

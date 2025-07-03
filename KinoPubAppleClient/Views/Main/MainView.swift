@@ -11,7 +11,7 @@ import KinoPubBackend
 struct MainView: View {
   @EnvironmentObject var navigationState: NavigationState
   @EnvironmentObject var errorHandler: ErrorHandler
-  @Environment(\.appContext) var appContext
+  @EnvironmentObject var appContext: AppContext
   
   @StateObject private var catalog: MediaCatalog
   @State private var showShortCutPicker: Bool = false
