@@ -18,6 +18,7 @@ class BookmarkModel: ObservableObject {
 
   public var bookmark: Bookmark
   @Published public var items: [MediaItem] = MediaItem.skeletonMock()
+  @Published public var isRefreshing: Bool = false
 
   init(bookmark: Bookmark, itemsService: VideoContentService, errorHandler: ErrorHandler) {
     self.contentService = itemsService
@@ -26,6 +27,9 @@ class BookmarkModel: ObservableObject {
   }
 
   func fetchItems() async {
+    isRefreshing = true
+    defer { isRefreshing = false }
+    
     do {
       items = try await contentService.fetchBookmarkItems(id: "\(bookmark.id)").items
     } catch {
@@ -41,6 +45,13 @@ class BookmarkModel: ObservableObject {
       Logger.app.debug("refetch bookmark items")
       await fetchItems()
     }
+  }
+  
+  @MainActor
+  func refreshAsync() async {
+    items = MediaItem.skeletonMock()
+    Logger.app.debug("refetch bookmark items async")
+    await fetchItems()
   }
 
 }

@@ -119,10 +119,7 @@ class MediaItemModel: ObservableObject {
   
   func startSeasonDownload(mediaItem: MediaItem, season: Season) {
     // Получаем SeasonDownloadManager из AppContext
-    guard let appContext = AppContext.shared as? AppContext else {
-      Logger.app.error("Failed to get AppContext for season download")
-      return
-    }
+    let appContext = AppContext.shared
     
     Task { @MainActor in
       appContext.seasonDownloadManager.downloadSeason(
@@ -139,12 +136,18 @@ class MediaItemModel: ObservableObject {
     await fetchData()
   }
   
+
+  
+
+  
   // MARK: - Private Methods
   private func observeDownloadProgress(for download: Download<DownloadMeta>, fileId: String) {
     // This would typically use Combine to observe download progress
     // For now, we'll update progress manually
     downloadProgress[fileId] = 0.0
   }
+  
+
 }
 
 // MARK: - Preview Support

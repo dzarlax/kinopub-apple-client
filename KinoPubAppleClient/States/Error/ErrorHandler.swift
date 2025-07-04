@@ -17,6 +17,7 @@ enum AppError: LocalizedError {
   case authenticationRequired
   case dataCorrupted
   case downloadFailed(String)
+  case custom(String)
   case unknown(Error)
   
   var errorDescription: String? {
@@ -29,6 +30,8 @@ enum AppError: LocalizedError {
       return "Data corrupted"
     case .downloadFailed(let reason):
       return "Download failed: \(reason)"
+    case .custom(let message):
+      return message
     case .unknown(let error):
       return "Unknown error: \(error.localizedDescription)"
     }
@@ -44,6 +47,8 @@ enum AppError: LocalizedError {
       return "Please refresh the data"
     case .downloadFailed:
       return "Try downloading again"
+    case .custom:
+      return "Попробуйте выбрать другой элемент"
     case .unknown:
       return "Please try again or contact support"
     }

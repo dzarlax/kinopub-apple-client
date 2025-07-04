@@ -16,8 +16,6 @@ struct MediaItemDescriptionCard: View {
   var isSkeleton: Bool
   var onDownload: (DownloadableMediaItem,FileInfo) -> Void
   var onSeasonDownload: ((MediaItem, Season) -> Void)?
-  var onWatchedToggle: () -> Void
-  var onBookmarkHandle: () -> Void
   @State private var selectedDownloadableItem: DownloadableMediaItem?
   @State private var showDownloadPicker: Bool = false
   @State private var showDownloadableItemPicker: Bool = false
@@ -116,20 +114,6 @@ struct MediaItemDescriptionCard: View {
 #if os(macOS)
       .buttonStyle(PlainButtonStyle())
 #endif
-      
-      Button(action: { onWatchedToggle() }, label: {
-        image(imageName: "eye")
-      })
-#if os(macOS)
-      .buttonStyle(PlainButtonStyle())
-#endif
-      
-      Button(action: { onBookmarkHandle() }, label: {
-        image(imageName: "folder")
-      })
-#if os(macOS)
-      .buttonStyle(PlainButtonStyle())
-#endif
     }
     
   }
@@ -145,7 +129,7 @@ struct MediaItemDescriptionCard: View {
 struct MediaItemDescriptionCard_Previews: PreviewProvider {
   struct Preview: View {
     var body: some View {
-      MediaItemDescriptionCard(mediaItem: MediaItem.mock(), isSkeleton: true, onDownload: { _,_  in }, onSeasonDownload: nil, onWatchedToggle: {}, onBookmarkHandle: {})
+      MediaItemDescriptionCard(mediaItem: MediaItem.mock(), isSkeleton: true, onDownload: { _,_  in }, onSeasonDownload: nil)
     }
   }
   

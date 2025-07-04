@@ -28,6 +28,9 @@ struct APIClientErrorHelper {
         return error.errorDescription ?? error.localizedDescription
       }
       return "Сетевая ошибка: \(error.localizedDescription)"
+    case .custom(let message):
+      print("⚠️ [API Error] Custom Error - пользовательская ошибка: \(message)")
+      return message
     }
   }
 

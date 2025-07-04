@@ -47,16 +47,9 @@ struct DownloadsView: View {
       }
       .onAppear(perform: {
         catalog.refresh()
-        
-        // Автоматически обновляем статусы просмотра при появлении экрана
-        Task {
-          await catalog.refreshAllWatchStatuses(userActionsService: appContext.actionsService)
-        }
       })
       .refreshable {
-        // Pull-to-refresh для обновления статусов просмотра
         catalog.refresh()
-        await catalog.refreshAllWatchStatuses(userActionsService: appContext.actionsService)
       }
     }
     
@@ -99,9 +92,7 @@ struct DownloadsView: View {
           navigationState.downloadsRoutes.append(.player(episode.metadata))
         },
         onToggleWatchStatus: { episode in
-          Task {
-            await catalog.toggleEpisodeWatchStatus(episode: episode, userActionsService: appContext.actionsService)
-          }
+          // Функция просмотренности отключена
         }
       )
       .id(seasonGroup.id) // Явно устанавливаем ID для SwiftUI

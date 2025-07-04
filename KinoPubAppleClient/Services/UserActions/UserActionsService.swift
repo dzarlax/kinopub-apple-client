@@ -12,6 +12,9 @@ import KinoPubBackend
 protocol UserActionsServiceProtocol {
   func addBookmark(id: Int) async throws
   func removeBookmark(id: Int) async throws
+  func toggleBookmark(id: Int, folder: Int?) async throws
+  func getBookmarkFolders() async throws -> [BookmarkFolder]
+  func getItemFolders(id: Int) async throws -> [BookmarkFolder]
   func toggleWatching(id: Int, video: Int?, season: Int?) async throws -> KinoPubKit.ToggleWatchingResponse
   func markWatch(id: Int, time: Int, video: Int?, season: Int?) async throws
   func fetchWatchMark(id: Int, video: Int?, season: Int?) async throws -> KinoPubBackend.WatchData
@@ -48,6 +51,26 @@ class MockUserActionsService: UserActionsService {
   
   func removeBookmark(id: Int) async throws {
     // Mock implementation
+  }
+  
+  func toggleBookmark(id: Int, folder: Int?) async throws {
+    // Mock implementation
+  }
+  
+  func getBookmarkFolders() async throws -> [BookmarkFolder] {
+    // Mock implementation - возвращаем тестовые папки
+    return [
+      BookmarkFolder(id: 1, title: "Фильмы", views: 10, count: "5", created: 1234567890, updated: 1234567890),
+      BookmarkFolder(id: 2, title: "Сериалы", views: 20, count: "10", created: 1234567890, updated: 1234567890),
+      BookmarkFolder(id: 3, title: "Мультфильмы", views: 5, count: "3", created: 1234567890, updated: 1234567890)
+    ]
+  }
+  
+  func getItemFolders(id: Int) async throws -> [BookmarkFolder] {
+    // Mock implementation - возвращаем случайные папки для элемента
+    return [
+      BookmarkFolder(id: 1, title: "Фильмы", views: 10, count: "5", created: 1234567890, updated: 1234567890)
+    ]
   }
   
   func toggleWatching(id: Int, video: Int?, season: Int?) async throws -> KinoPubKit.ToggleWatchingResponse {

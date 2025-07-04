@@ -12,4 +12,5 @@ public enum APIClientError: Error {
   case invalidUrlParams
   case networkError(Error)
   case decodingError(Error)
+  case custom(String)
 }

@@ -30,7 +30,30 @@ struct BookmarksView: View {
       }
       .navigationTitle("Bookmarks")
       .background(Color.KinoPub.background)
-      .refreshable(action: catalog.refresh)
+      .refreshable {
+        // Вариант 1: Полная очистка (раскрытые закладки закроются)
+        await catalog.refreshWithModelsCleanup {
+          bookmarkModels.removeAll()
+          expandedBookmarks.removeAll()
+        }
+        
+        // Вариант 2: Обновление с сохранением состояния (раскомментируйте если нужно)
+        /*
+        // Сначала обновляем список закладок
+        await catalog.refresh()
+        
+        // Затем обновляем все раскрытые закладки
+        await withTaskGroup(of: Void.self) { group in
+          for (bookmarkId, model) in bookmarkModels {
+            if expandedBookmarks.contains(bookmarkId) {
+              group.addTask {
+                await model.refreshAsync()
+              }
+            }
+          }
+        }
+        */
+      }
       .task {
         await catalog.fetchItems()
       }

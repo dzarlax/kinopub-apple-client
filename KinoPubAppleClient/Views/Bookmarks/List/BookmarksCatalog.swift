@@ -49,6 +49,15 @@ class BookmarksCatalog: ObservableObject {
     Logger.app.debug("refetch bookmarks")
     await fetchItems()
   }
+  
+  // Новый метод для обновления с callback для очистки моделей
+  @Sendable @MainActor
+  func refreshWithModelsCleanup(onModelsCleanup: @escaping () -> Void) async {
+    items = Bookmark.skeletonMock()
+    onModelsCleanup() // Очищаем модели закладок
+    Logger.app.debug("refetch bookmarks with models cleanup")
+    await fetchItems()
+  }
 
   private func subscribeForAuth() {
     authState.$userState.filter({ $0 == .authorized }).first().sink { [weak self] _ in

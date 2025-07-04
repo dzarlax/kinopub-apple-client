@@ -9,10 +9,12 @@ import Foundation
 
 public struct AddBookmarkRequest: Endpoint {
   
-  public let id: Int
+  public let item: Int
+  public let folder: Int?
   
-  public init(id: Int) {
-    self.id = id
+  public init(item: Int, folder: Int? = nil) {
+    self.item = item
+    self.folder = folder
   }
 
   public var path: String {
@@ -24,7 +26,11 @@ public struct AddBookmarkRequest: Endpoint {
   }
 
   public var parameters: [String: Any]? {
-    ["id": id]
+    var params: [String: Any] = ["item": item]
+    if let folder = folder {
+      params["folder"] = folder
+    }
+    return params
   }
 
   public var headers: [String: String]? {

@@ -63,18 +63,14 @@ struct MediaItemView: View {
                                        onDownload: { itemModel.startDownload(item: $0, file: $1) },
                                        onSeasonDownload: { mediaItem, season in
                                          itemModel.startSeasonDownload(mediaItem: mediaItem, season: season)
-                                       },
-                                       onWatchedToggle: {},
-                                       onBookmarkHandle: {})
+                                       })
               MediaItemFieldsCard(mediaItem: mediaItem, isSkeleton: itemModel.isLoading)
             } else {
               // Show skeleton loading view when no data
               MediaItemDescriptionCard(mediaItem: MediaItem.mock(), 
                                        isSkeleton: true,
                                        onDownload: { _, _ in },
-                                       onSeasonDownload: nil,
-                                       onWatchedToggle: {},
-                                       onBookmarkHandle: {})
+                                       onSeasonDownload: nil)
               MediaItemFieldsCard(mediaItem: MediaItem.mock(), isSkeleton: true)
             }
           }
@@ -105,6 +101,8 @@ struct MediaItemView: View {
                 Label("Комментарии", systemImage: "bubble.left.and.bubble.right")
               }
               .buttonStyle(.bordered)
+              
+
               
               Spacer()
             }
@@ -138,6 +136,7 @@ struct MediaItemView: View {
         .environmentObject(appContext)
       }
     }
+
   }
   
   var headerView: some View {

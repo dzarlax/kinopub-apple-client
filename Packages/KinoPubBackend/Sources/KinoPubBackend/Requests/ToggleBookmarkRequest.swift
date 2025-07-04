@@ -1,13 +1,13 @@
 //
-//  RemoveBookmarkRequest.swift
+//  ToggleBookmarkRequest.swift
 //
 //
-//  Created by Kirill Kunst on 6.08.2023.
+//  Created by Kirill Kunst on 4.07.2025.
 //
 
 import Foundation
 
-public struct RemoveBookmarkRequest: Endpoint {
+public struct ToggleBookmarkRequest: Endpoint {
   
   public let item: Int
   public let folder: Int?
@@ -18,7 +18,7 @@ public struct RemoveBookmarkRequest: Endpoint {
   }
 
   public var path: String {
-    "/v1/bookmarks/remove-item"
+    "/v1/bookmarks/toggle-item"
   }
 
   public var method: String {
